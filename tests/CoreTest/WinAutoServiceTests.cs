@@ -12,14 +12,14 @@ public class WinAutoServiceTests
 	[Fact]
 	public async Task GetAppAsync()
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 	}
 
 	[Fact]
 	public async Task PlayAsync()
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		await service.PlayUtterance();
 	}
@@ -28,7 +28,7 @@ public class WinAutoServiceTests
 	[InlineData(3)]
 	public async Task GetIndexAsync(int index)
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		var result = service.GetUtterancePosition();
 
@@ -38,7 +38,7 @@ public class WinAutoServiceTests
 	[InlineData(6)]
 	public async Task GetLenIndex(int index)
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		var result = service.GetLengthPosition();
 
@@ -49,7 +49,7 @@ public class WinAutoServiceTests
 	[InlineData("テスト")]
 	public async Task SetText(string text)
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		await service.SetUtterance(text);
 	}
@@ -61,7 +61,7 @@ public class WinAutoServiceTests
 	[InlineData("あめんぼ甘いな、あいうえお。")]
 	public async Task PlayTextAsync(string text)
 	{
-		var service = new WinAutoService();
+		var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		await service.SetUtterance(text);
 		await service.PlayUtterance();

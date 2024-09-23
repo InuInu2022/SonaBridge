@@ -15,7 +15,7 @@ using SonaBridge.Core.Common;
 
 namespace SonaBridge.Core.Win;
 
-public class WinAutoService : IAutoService
+public class WinTalkAutoService : ITalkAutoService
 {
 	private readonly string _pathToVsTalk = """C:\Program Files\Techno-Speech\VoiSona Talk""";
 	private Application? _app;
@@ -25,16 +25,27 @@ public class WinAutoService : IAutoService
 	private int _lenPos = -1;
 	private AutomationElement? _row;
 
+	/// <inheritdoc/>
+	public async Task<bool> SpeakAsync(
+		string text,
+		CancellationToken? token = null)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await SetUtterance(text).ConfigureAwait(false);
+		await PlayUtterance(token).ConfigureAwait(false);
+
+		return true;
+	}
 
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
-		_app = await GetApp(pathToExe).ConfigureAwait(false);
+		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
 		using var automation = new UIA3Automation();
-		_win = _app?.GetAllTopLevelWindows(automation)[0];
+		_win ??= _app?.GetAllTopLevelWindows(automation)[0];
 	}
 
 	internal async ValueTask PlayUtterance(
-		CancellationToken ctx = default
+		CancellationToken? ctx = default
 	)
 	{
 		var row = GetRow();
@@ -166,4 +177,6 @@ public class WinAutoService : IAutoService
 			.ConfigureAwait(false);
 		return result.Success ? result.Result : default;
 	}
+
+
 }
