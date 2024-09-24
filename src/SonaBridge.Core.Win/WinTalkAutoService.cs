@@ -25,6 +25,10 @@ public class WinTalkAutoService : ITalkAutoService
 	private int _lenPos = -1;
 	private AutomationElement? _row;
 
+	public WinTalkAutoService()
+	{
+	}
+
 	/// <inheritdoc/>
 	public async Task<bool> SpeakAsync(
 		string text,
@@ -66,7 +70,7 @@ public class WinTalkAutoService : ITalkAutoService
 		playBtn?.SetForeground();
 		playBtn?.Invoke();
 
-		await Task.Delay(tp, ctx)
+		await Task.Delay(tp, ctx ?? default)
 			.ConfigureAwait(false);
 		//reset
 		//await SetUtterance("").ConfigureAwait(false);
