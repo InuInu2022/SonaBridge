@@ -1,7 +1,5 @@
-using SonaBridge.Core;
+using SonaBridge;
 using SonaBridge.Core.Common;
-
-using Xunit;
 
 namespace CoreTest;
 

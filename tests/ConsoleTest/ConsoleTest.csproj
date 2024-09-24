@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0-windows</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
 
@@ -18,12 +18,6 @@
 
   <ItemGroup>
     <Using Include="Xunit" />
-
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\..\src\SonaBridge.Core.Win\SonaBridge.Core.Win.csproj" />
-    <ProjectReference Include="..\..\src\SonaBridge\SonaBridge.csproj" />
   </ItemGroup>
 
 </Project>

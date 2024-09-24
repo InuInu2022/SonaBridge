@@ -2,7 +2,7 @@ using Jab;
 
 using SonaBridge.Core.Common;
 
-namespace SonaBridge.Core;
+namespace SonaBridge;
 
 [ServiceProvider]
 #if WINDOWS

@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
-    <ProjectReference Include="..\SonaBridge.Core\SonaBridge.Core.csproj" />
+    <ProjectReference Include="..\SonaBridge\SonaBridge.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
