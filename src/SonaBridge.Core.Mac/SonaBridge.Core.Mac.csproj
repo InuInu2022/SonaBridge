@@ -1,0 +1,11 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-macos</TargetFramework>
+    <IsPublishable>false</IsPublishable>
+  </PropertyGroup>
+
+	<ItemGroup>
+    <ProjectReference Include="..\SonaBridge.Core.Common\SonaBridge.Core.Common.csproj" />
+  </ItemGroup>
+
+</Project>
