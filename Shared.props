@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <InvariantGlobalization>true</InvariantGlobalization>
 
+		<AccelerateBuildsInVisualStudio>true</AccelerateBuildsInVisualStudio>
+
     <EnableNETAnalyzers Condition="'$(Configuration)' == 'Debug'">true</EnableNETAnalyzers>
     <AnalysisLevel>latest-Recommended</AnalysisLevel>
   </PropertyGroup>
