@@ -56,7 +56,7 @@ public class WinTalkAutoService : ITalkAutoService
 
 		var col = GetLengthPosition();
 		var box = GetTextBox(col);
-		var t = box?.Text is null or [] ? "1.0" : box.Text;
+		var t = box?.Text is null or [] ? "5.0" : box.Text;
 		var sec = double.Parse(t, CultureInfo.InvariantCulture);
 		var tp = TimeSpan.FromSeconds(sec);
 
@@ -66,14 +66,13 @@ public class WinTalkAutoService : ITalkAutoService
 				.And(f.ByName("UtteranceListPanelDrawableButton"))
 			)
 			.AsButton();
-		playBtn?.FocusNative();
-		playBtn?.SetForeground();
+		//playBtn?.FocusNative();
+		//playBtn?.SetForeground();
 		playBtn?.Invoke();
 
 		await Task.Delay(tp, ctx ?? default)
 			.ConfigureAwait(false);
-		//reset
-		//await SetUtterance("").ConfigureAwait(false);
+		System.Diagnostics.Debug.WriteLine($"len: {tp}, {t}");
 	}
 
 	internal async ValueTask SetUtterance(string text = "")
@@ -82,12 +81,12 @@ public class WinTalkAutoService : ITalkAutoService
 		var edit = GetTextBox(col);
 
 		if (edit is null) return;
-		edit.FocusNative();
+		//edit.FocusNative();
 		await Task
 			.Run(() => edit.WaitUntilEnabled(TimeSpan.FromSeconds(10)))
 			.ConfigureAwait(false);
-		//edit.Text = text;
-		edit.Enter(text);
+		edit.Text = text;
+		//edit.Enter(text);
 		Keyboard.Press(VirtualKeyShort.ENTER);
 		//wait
 		await Task.Delay(300).ConfigureAwait(false);
@@ -175,7 +174,7 @@ public class WinTalkAutoService : ITalkAutoService
 			.Run(() => Retry.WhileNull(
 				() => Application.AttachOrLaunch(psi),
 				timeout: TimeSpan.FromSeconds(30),
-				interval: TimeSpan.FromSeconds(5),
+				interval: TimeSpan.FromSeconds(1),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
