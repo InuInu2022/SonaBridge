@@ -1,9 +1,15 @@
+using FluentAssertions;
+
 using SonaBridge.Core.Win;
+
+using Xunit.Abstractions;
 
 namespace CoreTest;
 
-public class WinAutoServiceTests
+public class WinAutoServiceTests(ITestOutputHelper output)
 {
+	private readonly ITestOutputHelper _output = output;
+
 	[Fact]
 	public async Task GetAppAsync()
 	{
@@ -62,5 +68,17 @@ public class WinAutoServiceTests
 		await service.PlayUtterance();
 
 		await Task.Delay(1000);
+	}
+
+	[Fact]
+	public async void GetVoices()
+	{
+		var service = new WinTalkAutoService();
+		await service.GetAppWindowAsync();
+		var items = await service.GetVoiceNames();
+
+		items.ToList().ForEach(v => _output.WriteLine($"voice: {v}") );
+
+		items.Should().NotBeEmpty();
 	}
 }

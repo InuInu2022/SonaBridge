@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading.Tasks;
 
@@ -39,6 +40,13 @@ public class WinTalkAutoService : ITalkAutoService
 		await PlayUtterance(token).ConfigureAwait(false);
 
 		return true;
+	}
+
+	public async Task<string[]> GetAvailableCastsAsync()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		var voices = await GetVoiceNames().ConfigureAwait(false);
+		return [.. voices];
 	}
 
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
@@ -90,6 +98,51 @@ public class WinTalkAutoService : ITalkAutoService
 		Keyboard.Press(VirtualKeyShort.ENTER);
 		//wait
 		await Task.Delay(300).ConfigureAwait(false);
+	}
+
+	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
+	{
+		var cb = _win?.FindFirstDescendant(
+				f => f.ByControlType(ControlType.ComboBox)
+				.And(f.ByHelpText("ボイスを選択"))
+			)
+			.AsComboBox();
+
+		if (cb is null) return [];
+
+		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		{
+			cb.Expand();
+		}
+
+		using var automation = new UIA3Automation();
+		var result = await Task
+			.Run(() => Retry.WhileNull(
+				() => {
+					var wins = automation
+						.GetDesktop()
+						.FindAllDescendants(
+							f => f.ByFrameworkId("JUCE")
+								.And(f.ByControlType(ControlType.MenuItem))
+						);
+					return wins.Length == 0 ? null : wins;
+				},
+				timeout: TimeSpan.FromSeconds(30),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+		foreach (var item in result.Result ?? [])
+		{
+			Console.WriteLine(item.Name);
+			System.Diagnostics.Debug.WriteLine(item.Name);
+		}
+		var items1 = result.Result?.Select(v => v.Name).ToList();
+
+		cb.Collapse();
+		return items1 ?? [];
+
+		var itemObjs = result.Result?.Select(v => v.ToString()).ToList();
 	}
 
 	TextBox? GetTextBox(int col)
