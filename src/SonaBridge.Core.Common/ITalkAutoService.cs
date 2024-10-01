@@ -21,4 +21,19 @@ public interface ITalkAutoService : IAutoService
 	/// </remarks>
 	/// <returns></returns>
 	Task<string[]> GetAvailableCastsAsync();
+
+	/// <summary>
+	/// 現在のキャスト(話者)を取得します。
+	/// </summary>
+	/// <returns>ボイスライブラリ名</returns>
+	/// <seealso cref="SetCastAsync(string)"/>
+	Task<string> GetCastAsync();
+
+	/// <summary>
+	/// キャスト(話者)を設定します。
+	/// </summary>
+	/// <param name="castName">キャスト名。利用可能なキャスト名は<see cref="GetAvailableCastsAsync"/>で取得できます。</param>
+	/// <returns></returns>
+	/// <see cref="GetCastAsync"/>
+	System.Threading.Tasks.ValueTask SetCastAsync(string castName);
 }

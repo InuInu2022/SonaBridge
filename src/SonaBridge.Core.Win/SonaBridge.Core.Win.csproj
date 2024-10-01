@@ -9,12 +9,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="FlaUI.Fluent" Version="3.0.0.105" />
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-    <PackageReference Include="System.Threading.Tasks" Version="4.3.0" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
   </ItemGroup>
 
 
