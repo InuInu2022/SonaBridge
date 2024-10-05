@@ -57,7 +57,7 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 
 	[Theory]
 	[InlineData("こんにちは")]
-	[InlineData("どうも。")]
+	[InlineData("ありがとうございます。")]
 	[InlineData("本日は晴天なり。")]
 	[InlineData("あめんぼ甘いな、あいうえお。")]
 	public async Task PlayTextAsync(string text)
@@ -111,5 +111,26 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		});
 
 		Assert.Equal("FlaUI operation error!", ex.Message);
+	}
+
+	[Theory]
+	[InlineData("Koharu Rikka","やれないとコホがあるこはる。")]
+	[InlineData("Sato Sasara","なかなかやりたいと重く事五とやるぜきの喉のバランスボールが取れないと言うか。")]
+	[InlineData("Takahashi", "感というか、私は優先順位をつけるというのか本王に苦手で、")]
+	[InlineData("Tanaka San", "管理に湯として、大した事が出来た無いのが申し訳ないよねらとぉってるのですが。")]
+	[InlineData("Tamaki", "イウしキーを呑んとるのですが。")]
+	[InlineData("Suzuki Tsudumi", "そうやなす。")]
+	public async void SetVoiceAndTextAsync(
+		string castName,
+		string text
+	)
+	{
+		var service = new WinTalkAutoService();
+		await service.SetCastAsync(castName);
+		await service.SpeakAsync(text);
+		//await service.GetAppWindowAsync();
+		//var result = await service.SetVoiceAsync(castName);
+		//await service.SetUtterance(text);
+		//await service.PlayUtterance();
 	}
 }
