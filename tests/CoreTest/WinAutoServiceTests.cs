@@ -81,4 +81,20 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 
 		items.Should().NotBeEmpty();
 	}
+
+	[Theory]
+	[InlineData("Suzuki Tsudumi", true)]
+	[InlineData("Sato Sasara", true)]
+	[InlineData("Tamaki", true)]
+	[InlineData("Takahashi", true)]
+	//[InlineData("No Name Voice", false)]
+	public async void SetVoice(string name, bool expected)
+	{
+		var service = new WinTalkAutoService();
+		await service.GetAppWindowAsync();
+		var result = await service.SetVoiceAsync(name);
+
+		result.Should().Be(expected);
+		await service.PlayUtterance();
+	}
 }

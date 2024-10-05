@@ -76,11 +76,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
 	{
-		var cb = _win?.FindFirstDescendant(
-				f => f.ByControlType(ControlType.ComboBox)
-				.And(f.ByHelpText("ボイスを選択"))
-			)
-			.AsComboBox();
+		ComboBox? cb = GetVoiceCombo();
 
 		if (cb is null) return [];
 
@@ -90,9 +86,101 @@ public partial class WinTalkAutoService : ITalkAutoService
 		}
 
 		using var automation = new UIA3Automation();
-		var result = await Task
+		var result = await GetVoiceListAsync(automation).ConfigureAwait(false);
+		foreach (var item in result.Result ?? [])
+		{
+			Console.WriteLine(item.Name);
+			System.Diagnostics.Debug.WriteLine(item.Name);
+		}
+		var items1 = result.Result?.Select(v => v.Name).ToList();
+
+		return items1 ?? [];
+	}
+
+
+
+	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
+	{
+		ComboBox? cb = GetVoiceCombo();
+
+		if (cb is null) return false;
+
+		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		{
+			cb.Expand();
+		}
+
+		using var automation = new UIA3Automation();
+		var result = await GetVoiceListAsync(automation).ConfigureAwait(false);
+		if (!result.Success) return result.Success;
+		var items1 = result.Result?.Select(v => v.Name).ToList();
+		var voice = result.Result?
+			.FirstOrDefault(v => string.Equals(v.Name, voiceName, StringComparison.Ordinal))
+			.AsMenuItem()
+			;
+		if (voice is null) return false;
+
+		voice.Focus();
+		//voice.Invoke();
+		voice.Expand();
+		//Keyboard.Press(VirtualKeyShort.ENTER);
+		var ms = await SetVoiceInnerAsync(automation).ConfigureAwait(false);
+		foreach(var m in ms.Result ?? [])
+		{
+			System.Diagnostics.Debug.WriteLine($"modal: {m}, {m.Name}");
+			Console.WriteLine($"modal: {m}, {m.Name}");
+		}
+		//wait
+		Retry.WhileTrue(() =>
+			{
+				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
+
+				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
+			},
+			TimeSpan.FromSeconds(30),
+			TimeSpan.FromMilliseconds(300));
+		_win?.Focus();
+
+		//await Task.Delay(300).ConfigureAwait(false);
+
+		return true;
+	}
+
+	async Task<RetryResult<AutomationElement[]?>> SetVoiceInnerAsync(UIA3Automation automation){
+		var modals = await Task
 			.Run(() => Retry.WhileNull(
-				() => {
+				() =>
+				{
+					var customs = automation
+						.GetDesktop()
+						.FindAllChildren()
+						.FirstOrDefault(w =>
+							string.Equals(w.Name, "VoiSona Talk Editor", StringComparison.Ordinal)
+							&& w.AsWindow().IsModal)?
+						.FindAllDescendants(
+							f => f.ByFrameworkId("JUCE")
+							.And(f.ByControlType(ControlType.Custom))
+						);
+					return customs?.Length == 0 ? null : customs;
+				},
+				timeout: TimeSpan.FromSeconds(30),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+
+		modals.Result?[0].Click();
+
+		return modals;
+	}
+
+	static async Task<RetryResult<AutomationElement[]?>>
+	GetVoiceListAsync(UIA3Automation automation)
+	{
+		return await Task
+			.Run(() => Retry.WhileNull(
+				() =>
+				{
 					var wins = automation
 						.GetDesktop()
 						.FindAllDescendants(
@@ -106,15 +194,15 @@ public partial class WinTalkAutoService : ITalkAutoService
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
-		foreach (var item in result.Result ?? [])
-		{
-			Console.WriteLine(item.Name);
-			System.Diagnostics.Debug.WriteLine(item.Name);
-		}
-		var items1 = result.Result?.Select(v => v.Name).ToList();
+	}
 
-		cb.Collapse();
-		return items1 ?? [];
+	ComboBox? GetVoiceCombo()
+	{
+		return _win?.FindFirstDescendant(
+				f => f.ByControlType(ControlType.ComboBox)
+				.And(f.ByHelpText("ボイスを選択"))
+			)
+			.AsComboBox();
 	}
 
 	TextBox? GetTextBox(int col)
