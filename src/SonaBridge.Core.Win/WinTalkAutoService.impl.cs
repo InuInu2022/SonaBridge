@@ -40,17 +40,26 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var box = GetTextBox(col);
 		var t = box?.Text is null or [] ? "5.0" : box.Text;
 		var sec = double.Parse(t, CultureInfo.InvariantCulture);
-		var tp = TimeSpan.FromSeconds(sec);
+		var tp = TimeSpan.FromSeconds(sec+0.5);
 
-		var playBtn = row?
-			.FindFirstDescendant(f => f
-				.ByControlType(ControlType.Button)
-				.And(f.ByName("UtteranceListPanelDrawableButton"))
-			)
-			.AsButton();
+		var result = await Task.Run(()=>
+			Retry.WhileNull(() =>
+				row?
+					.FindAllDescendants(f => f
+						.ByControlType(ControlType.Button)
+						.And(f.ByName("UtteranceListPanelDrawableButton"))
+					)
+					.FirstOrDefault(
+						e => e.Patterns.GridItem.Pattern.Column == 0
+					)
+					.AsButton(),
+			TimeSpan.FromSeconds(30),
+			TimeSpan.FromMilliseconds(300))
+		).ConfigureAwait(false);
+
 		//playBtn?.FocusNative();
 		//playBtn?.SetForeground();
-		playBtn?.Invoke();
+		result.Result?.Invoke();
 
 		await Task.Delay(tp, ctx ?? default)
 			.ConfigureAwait(false);
@@ -63,15 +72,23 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var edit = GetTextBox(col);
 
 		if (edit is null) return;
-		//edit.FocusNative();
+		edit.FocusNative();
 		await Task
 			.Run(() => edit.WaitUntilEnabled(TimeSpan.FromSeconds(10)))
 			.ConfigureAwait(false);
 		edit.Text = text;
 		//edit.Enter(text);
-		Keyboard.Press(VirtualKeyShort.ENTER);
+		Keyboard.Press(VirtualKeyShort.RETURN);
+
+		await Task.Run(() =>
+			GetUtteranceEneble()
+				.WaitUntilEnabled(TimeSpan.FromSeconds(10))
+		).ConfigureAwait(false);
+		//await Task.Delay(100).ConfigureAwait(false);
+		//Keyboard.Press(VirtualKeyShort.RETURN);
+
 		//wait
-		await Task.Delay(300).ConfigureAwait(false);
+		//await Task.Delay(300).ConfigureAwait(false);
 	}
 
 	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
@@ -139,7 +156,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			},
 			TimeSpan.FromSeconds(30),
 			TimeSpan.FromMilliseconds(300));
-		_win?.Focus();
+		//_win?.Focus();
 
 		//await Task.Delay(300).ConfigureAwait(false);
 
@@ -214,6 +231,15 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return children?
 			.FirstOrDefault(x => x.AsGridCell().Patterns.GridItem.Pattern.Column == col)
 			.AsTextBox();
+	}
+
+	CheckBox? GetUtteranceEneble()
+	{
+		var row = GetRow();
+		var target = row?.FindFirstDescendant(
+			f => f.ByControlType(ControlType.CheckBox)
+		).AsCheckBox();
+		return target;
 	}
 
 	internal int GetUtterancePosition(string headerName = "文")
