@@ -97,4 +97,19 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		result.Should().Be(expected);
 		await service.PlayUtterance();
 	}
+
+	[Fact]
+	public async void SetCastAsyncThrowsInvalidOperationExceptionWhenCastNameNotFound()
+	{
+		var service = new WinTalkAutoService();
+		await service.GetAppWindowAsync();
+
+		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+		{
+			await service.SetCastAsync("NonExistentCastName")
+			.ConfigureAwait(true);
+		});
+
+		Assert.Equal("FlaUI operation error!", ex.Message);
+	}
 }

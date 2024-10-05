@@ -35,6 +35,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	public async ValueTask SetCastAsync(string castName)
 	{
-		await Task.CompletedTask.ConfigureAwait(false);
+		await GetAppWindowAsync().ConfigureAwait(false);
+		var result = await SetVoiceAsync(castName).ConfigureAwait(false);
+		if(!result){
+			throw new InvalidOperationException("FlaUI operation error!");
+		}
 	}
 }
