@@ -23,6 +23,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _lenPos = -1;
 	private AutomationElement? _row;
 
+	internal Window? TopWindow { get => _win; }
+
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
@@ -148,19 +150,32 @@ public partial class WinTalkAutoService : ITalkAutoService
 			Console.WriteLine($"modal: {m}, {m.Name}");
 		}
 		//wait
-		Retry.WhileTrue(() =>
+		await Task.Run(()=>
+			Retry.WhileTrue(() =>
 			{
 				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
 
 				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
 			},
 			TimeSpan.FromSeconds(30),
-			TimeSpan.FromMilliseconds(300));
+			TimeSpan.FromMilliseconds(300))
+		).ConfigureAwait(false);
 		//_win?.Focus();
 
 		//await Task.Delay(300).ConfigureAwait(false);
 
 		return true;
+	}
+
+	internal void SetFocusFirstRow(bool isWithRightClick = false)
+	{
+		var row = GetRow();
+		row.AsGridRow().Focus();
+		if (isWithRightClick)
+		{
+			row.WaitUntilClickable();
+			row.AsGridRow().RightClick();
+		}
 	}
 
 	async Task<RetryResult<AutomationElement[]?>> SetVoiceInnerAsync(UIA3Automation automation){

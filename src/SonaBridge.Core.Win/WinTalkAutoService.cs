@@ -1,4 +1,6 @@
-﻿using SonaBridge.Core.Common;
+﻿using System.Diagnostics;
+
+using SonaBridge.Core.Common;
 
 namespace SonaBridge.Core.Win;
 
@@ -30,7 +32,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	public async Task<string> GetCastAsync()
 	{
 		await Task.CompletedTask.ConfigureAwait(false);
-		return "";
+		throw new NotSupportedException();
+		//return "";
 	}
 
 	public async ValueTask SetCastAsync(string castName)
@@ -40,5 +43,26 @@ public partial class WinTalkAutoService : ITalkAutoService
 		if(!result){
 			throw new InvalidOperationException("FlaUI operation error!");
 		}
+	}
+
+	public async Task<bool> OutputWaveToFileAsync(string text, string path)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await SetUtterance(text).ConfigureAwait(false);
+
+		Debug.WriteLine($"output wav file: {path}");
+
+		try
+		{
+			await SaveWavAsync(path)
+				.ConfigureAwait(false);
+		}
+		catch (System.Exception e)
+		{
+			Console.Error.WriteLine(e.Message);
+			return false;
+		}
+
+		return true;
 	}
 }

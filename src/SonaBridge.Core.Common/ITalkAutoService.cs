@@ -5,7 +5,7 @@ public interface ITalkAutoService : IAutoService
 	/// <summary>
 	/// 指定したセリフの再生を開始します。
 	/// </summary>
-	/// <param name="text"></param>
+	/// <param name="text">セリフ。</param>
 	/// <param name="token"></param>
 	/// <returns></returns>
 	Task<bool> SpeakAsync(
@@ -36,4 +36,12 @@ public interface ITalkAutoService : IAutoService
 	/// <returns></returns>
 	/// <see cref="GetCastAsync"/>
 	System.Threading.Tasks.ValueTask SetCastAsync(string castName);
+
+	/// <summary>
+	/// 指定したセリフをWAVファイルとして出力します。
+	/// </summary>
+	/// <param name="text">セリフ。</param>
+	/// <param name="path">出力先パス。</param>
+	/// <returns>成功した場合はtrue。それ以外の場合はfalse。</returns>
+	Task<bool> OutputWaveToFileAsync(string text, string path);
 }

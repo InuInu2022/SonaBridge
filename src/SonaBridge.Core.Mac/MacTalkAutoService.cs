@@ -15,6 +15,11 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public Task<bool> OutputWaveToFileAsync(string text, string path)
+	{
+		throw new NotSupportedException();
+	}
+
 	public ValueTask SetCastAsync(string castName)
 	{
 		throw new NotSupportedException();

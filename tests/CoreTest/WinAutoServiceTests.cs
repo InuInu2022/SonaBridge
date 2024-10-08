@@ -133,4 +133,33 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		//await service.SetUtterance(text);
 		//await service.PlayUtterance();
 	}
+
+	[Theory]
+	[InlineData("Koharu Rikka","やれないとコホがあるこはる。")]
+	[InlineData("Sato Sasara","なかなかやりたいと重く事五とやるぜきの喉のバランスボールが取れないと言うか。")]
+	[InlineData("Takahashi", "感というか、私は優先順位をつけるというのか本王に苦手で、")]
+	[InlineData("Tanaka San", "管理に湯として、大した事が出来た無いのが申し訳ないよねらとぉってるのですが。")]
+	[InlineData("Tamaki", "イウしキーを呑んとるのですが。")]
+	[InlineData("Suzuki Tsudumi", "そうやなす。")]
+	public async void OutputWavAsync(
+		string castName,
+		string text
+	)
+	{
+		var service = new WinTalkAutoService();
+
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+		await service.SetCastAsync(castName);
+		var path = Path.Combine(
+			Path.GetTempPath(),
+			$"{castName}_{text}"
+		);
+		var result = await service.OutputWaveToFileAsync(text, path);
+		sw.Stop();
+
+		_output.WriteLine($"time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
+
+		result.Should().BeTrue();
+		Path.Exists($"{path}.wav").Should().BeTrue();
+	}
 }
