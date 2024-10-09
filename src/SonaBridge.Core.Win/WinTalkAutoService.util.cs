@@ -30,7 +30,7 @@ public partial class WinTalkAutoService
 					);
 					return ms is [] or null ? null : ms;
 				},
-				timeout: TimeSpan.FromSeconds(10),
+				timeout: TimeSpan.FromSeconds(3),
 				interval: TimeSpan.FromSeconds(0.1),
 				ignoreException: true
 			))

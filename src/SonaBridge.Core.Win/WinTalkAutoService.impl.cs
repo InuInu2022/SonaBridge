@@ -56,8 +56,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 						e => e.Patterns.GridItem.Pattern.Column == 0
 					)
 					.AsButton(),
-			TimeSpan.FromSeconds(30),
-			TimeSpan.FromMilliseconds(300))
+			TimeSpan.FromSeconds(3),
+			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
 
 		//playBtn?.FocusNative();
@@ -77,7 +77,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		if (edit is null) return;
 		edit.FocusNative();
 		await Task
-			.Run(() => edit.WaitUntilEnabled(TimeSpan.FromSeconds(10)))
+			.Run(() => edit.WaitUntilEnabled(TimeSpan.FromSeconds(5)))
 			.ConfigureAwait(false);
 		edit.Text = text;
 		//edit.Enter(text);
@@ -85,7 +85,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		await Task.Run(() =>
 			GetUtteranceEneble()
-				.WaitUntilEnabled(TimeSpan.FromSeconds(10))
+				.WaitUntilEnabled(TimeSpan.FromSeconds(5))
 		).ConfigureAwait(false);
 		//await Task.Delay(100).ConfigureAwait(false);
 		//Keyboard.Press(VirtualKeyShort.RETURN);
@@ -146,11 +146,12 @@ public partial class WinTalkAutoService : ITalkAutoService
 			Retry.WhileTrue(() =>
 			{
 				//TODO: 正確な合成待ちを追加する
+				cb.WaitUntilClickable();
 				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
 
 				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
 			},
-			TimeSpan.FromSeconds(30),
+			TimeSpan.FromSeconds(10),
 			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
 		await Task.Delay(200).ConfigureAwait(false);	//安全策
@@ -186,7 +187,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 						);
 					return customs?.Length == 0 ? null : customs;
 				},
-				timeout: TimeSpan.FromSeconds(30),
+				timeout: TimeSpan.FromSeconds(10),
 				interval: TimeSpan.FromSeconds(0.1),
 				ignoreException: true
 			))
