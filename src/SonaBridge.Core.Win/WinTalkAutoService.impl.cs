@@ -22,7 +22,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
-	private IEnumerable<string> VoiceList { get; set; }
+	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
 	internal Window? TopWindow { get => _win; }
 
@@ -96,6 +96,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
 	{
+		if(VoiceNames?.Any() == true){ return [.. VoiceNames]; }
 		ComboBox? cb = GetVoiceCombo();
 
 		if (cb is null) return [];
@@ -113,8 +114,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 			System.Diagnostics.Debug.WriteLine(item.Name);
 		}
 		var voiceNames = result.Select(v => v.Name).ToList();
-
-		return voiceNames ?? [];
+		VoiceNames = [..voiceNames];
+		return VoiceNames ?? [];
 	}
 
 	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
@@ -130,7 +131,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		using var automation = new UIA3Automation();
 		var result = await GetVoiceListAsync().ConfigureAwait(false);
-		var items1 = result.Select(v => v.Name).ToList();
 		var voice = result
 			.FirstOrDefault(v => string.Equals(v.Name, voiceName, StringComparison.Ordinal))
 			.AsMenuItem()
@@ -138,29 +138,22 @@ public partial class WinTalkAutoService : ITalkAutoService
 		if (voice is null) return false;
 
 		voice.Focus();
-		//voice.Invoke();
 		voice.Expand();
-		//Keyboard.Press(VirtualKeyShort.ENTER);
-		var ms = await SetVoiceInnerAsync(automation).ConfigureAwait(false);
-		foreach(var m in ms.Result ?? [])
-		{
-			System.Diagnostics.Debug.WriteLine($"modal: {m}, {m.Name}");
-			Console.WriteLine($"modal: {m}, {m.Name}");
-		}
+		await SetVoiceInnerAsync(automation).ConfigureAwait(false);
+
 		//wait
 		await Task.Run(()=>
 			Retry.WhileTrue(() =>
 			{
+				//TODO: 正確な合成待ちを追加する
 				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
 
 				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
 			},
 			TimeSpan.FromSeconds(30),
-			TimeSpan.FromMilliseconds(300))
+			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
-		//_win?.Focus();
-
-		//await Task.Delay(300).ConfigureAwait(false);
+		await Task.Delay(100).ConfigureAwait(false);	//安全策
 
 		return true;
 	}
