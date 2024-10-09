@@ -65,7 +65,7 @@ public sealed class WinCommon
 
 		//override check
 		var overwriteDialog = await GetWin32DialogAsync(
-			window, overrideDialogTitle
+			window, overrideDialogTitle, 1
 		).ConfigureAwait(false);
 		var overwriteButton = overwriteDialog?
 			.FindFirstDescendant(cf => cf.ByAutomationId("CommandButton_6")
@@ -77,7 +77,8 @@ public sealed class WinCommon
 
 	static async Task<Window?> GetWin32DialogAsync(
 		Window window,
-		string titleContainText
+		string titleContainText,
+		int timeout = 5
 	)
 	{
 		var result = await Task
@@ -88,8 +89,8 @@ public sealed class WinCommon
 						.ModalWindows
 						.FirstOrDefault(w => w.Title.Contains(titleContainText, StringComparison.Ordinal));
 				},
-				TimeSpan.FromSeconds(3),
-				TimeSpan.FromMilliseconds(300))
+				TimeSpan.FromSeconds(timeout),
+				TimeSpan.FromMilliseconds(100))
 			).ConfigureAwait(false);
 		return result.Success ? result.Result : null;
 	}
