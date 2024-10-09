@@ -22,6 +22,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
+	private string _lastVoiceName;
+
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
 	internal Window? TopWindow { get => _win; }
@@ -120,6 +122,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
 	{
+		if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) return true;
+
 		ComboBox? cb = GetVoiceCombo();
 
 		if (cb is null) return false;
@@ -145,7 +149,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await Task.Run(()=>
 			Retry.WhileTrue(() =>
 			{
-				//TODO: 正確な合成待ちを追加する
 				cb.WaitUntilClickable();
 				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
 
@@ -154,7 +157,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 			TimeSpan.FromSeconds(10),
 			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
-		await Task.Delay(200).ConfigureAwait(false);	//安全策
+		//await Task.Delay(200).ConfigureAwait(false);	//安全策
+
+		_lastVoiceName = voiceName;
 
 		return true;
 	}
