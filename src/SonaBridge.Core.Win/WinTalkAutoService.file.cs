@@ -54,7 +54,7 @@ public partial class WinTalkAutoService
 
 			var r1 = Retry.WhileFalse(
 				() => File.Exists(chk),
-				TimeSpan.FromSeconds(10),
+				TimeSpan.FromSeconds(5),
 				TimeSpan.FromSeconds(0.1),
 				ignoreException:true
 			);
@@ -65,14 +65,13 @@ public partial class WinTalkAutoService
 			var newfull = Path.Combine(Path.GetDirectoryName(chk!)!, newName);
 			var r2 = Retry.WhileException(
 				()=>{
-
 					File.Move(
 						chk,
 						newfull,
 						overwrite: true
 					);
 				},
-				TimeSpan.FromSeconds(10),
+				TimeSpan.FromSeconds(5),
 				TimeSpan.FromSeconds(0.1)
 			);
 
