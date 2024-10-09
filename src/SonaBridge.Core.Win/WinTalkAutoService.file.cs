@@ -48,6 +48,8 @@ public partial class WinTalkAutoService
 	{
 		if (fullPathWavFile.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return;
 
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
 		await Task.Run(() =>
 		{
 			var chk = $"{fullPathWavFile}.wav";
@@ -77,5 +79,8 @@ public partial class WinTalkAutoService
 
 			if(!r2.Success) throw new FileNotFoundException(newfull);
 		}).ConfigureAwait(false);
+
+		sw.Stop();
+		Console.WriteLine($"fix ext. time : {sw.Elapsed.TotalSeconds}");
 	}
 }
