@@ -165,4 +165,20 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		result.Should().BeTrue();
 		Path.Exists($"{path}.wav").Should().BeTrue();
 	}
+
+	[Theory]
+	[InlineData("tmp")]
+	[InlineData("abc")]
+	public async void FixExtention(string ext)
+	{
+		var service = new WinTalkAutoService();
+		var path = Path.Combine(
+			Path.GetTempPath(),
+			$"{Path.GetRandomFileName()}.{ext}"
+		);
+		await using var fs = File.Create($"{path}.wav");
+		fs.Close();
+		await WinTalkAutoService.FixExtensionAsync(path);
+		Path.Exists(path).Should().BeTrue();
+	}
 }

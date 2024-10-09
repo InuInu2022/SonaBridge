@@ -23,24 +23,10 @@ public partial class WinTalkAutoService
 
 		SetFocusFirstRow(true);
 
-		/*
-		var menus = await GetModalMenuItems().ConfigureAwait(false);
-		var eMenu = menus?.FirstOrDefault(m =>
-			string.Equals(m.Name, exportMenuItemName, StringComparison.Ordinal));
-		eMenu.AsMenuItem().Invoke();
-		await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
-		*/
 		await InvokeModalMenuItemAsync(m =>
 			string.Equals(m.Name, exportMenuItemName, StringComparison.Ordinal))
 			.ConfigureAwait(false);
 
-		/*
-		menus = await GetModalMenuItems().ConfigureAwait(false);
-		var menu = menus?
-			.FirstOrDefault(m => m.Name.Contains(wavExportMenuName, StringComparison.InvariantCultureIgnoreCase));
-		menu.AsMenuItem().Invoke();
-		await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
-		*/
 		await InvokeModalMenuItemAsync(m =>
 			m.Name.Contains(wavExportMenuName, StringComparison.InvariantCultureIgnoreCase))
 			.ConfigureAwait(false);
@@ -49,10 +35,48 @@ public partial class WinTalkAutoService
 			_win,
 			fullPathWavFile
 		).ConfigureAwait(false);
-		//await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
+
+		// ".wav"以外の拡張子を与えられたら出力ファイルの".wav"を消す
+		await FixExtensionAsync(fullPathWavFile).ConfigureAwait(false);
 
 		await Task.Run(
-			()=> _win.WaitUntilClickable(TimeSpan.FromSeconds(10))
+			() => _win.WaitUntilClickable(TimeSpan.FromSeconds(10))
 		).ConfigureAwait(false);
+	}
+
+	internal static async ValueTask FixExtensionAsync(string fullPathWavFile)
+	{
+		if (fullPathWavFile.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return;
+
+		await Task.Run(() =>
+		{
+			var chk = $"{fullPathWavFile}.wav";
+
+			var r1 = Retry.WhileFalse(
+				() => File.Exists(chk),
+				TimeSpan.FromSeconds(10),
+				TimeSpan.FromSeconds(1),
+				ignoreException:true
+			);
+
+			if (!r1.Success) throw new FileNotFoundException(chk);
+
+			var newName = Path.GetFileNameWithoutExtension(chk);
+			var newfull = Path.Combine(Path.GetDirectoryName(chk!)!, newName);
+			var r2 = Retry.WhileException(
+				()=>{
+
+					File.Copy(
+						chk,
+						newfull,
+						overwrite: true
+					);
+				},
+				TimeSpan.FromSeconds(10),
+				TimeSpan.FromSeconds(1)
+			);
+
+			if(!r2.Success) throw new FileNotFoundException(newfull);
+		}).ConfigureAwait(false);
 	}
 }
