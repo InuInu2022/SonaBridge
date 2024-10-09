@@ -154,10 +154,13 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 			Path.GetTempPath(),
 			$"{castName}_{text}"
 		);
+		sw.Stop();
+		_output.WriteLine($"set time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
+		sw.Restart();
 		var result = await service.OutputWaveToFileAsync(text, path);
 		sw.Stop();
 
-		_output.WriteLine($"time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
+		_output.WriteLine($"output time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
 
 		result.Should().BeTrue();
 		Path.Exists($"{path}.wav").Should().BeTrue();
