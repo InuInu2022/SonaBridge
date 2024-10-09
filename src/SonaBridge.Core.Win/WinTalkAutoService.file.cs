@@ -16,6 +16,7 @@ public partial class WinTalkAutoService
 		string wavExportMenuName = "WAV"
 	)
 	{
+		var sw = System.Diagnostics.Stopwatch.StartNew();
 		await GetAppWindowAsync().ConfigureAwait(false);
 		if (_win is null) throw new InvalidOperationException("window is null");
 		_win.SetForeground();
@@ -31,10 +32,18 @@ public partial class WinTalkAutoService
 			m.Name.Contains(wavExportMenuName, StringComparison.InvariantCultureIgnoreCase))
 			.ConfigureAwait(false);
 
+		sw.Stop();
+		Console.WriteLine($"export setting time : {sw.Elapsed.TotalSeconds}");
+		sw.Restart();
+
 		await WinCommon.SaveWavFileAsync(
 			_win,
 			fullPathWavFile
 		).ConfigureAwait(false);
+
+		sw.Stop();
+		Console.WriteLine($"save time : {sw.Elapsed.TotalSeconds}");
+		sw.Restart();
 
 		// ".wav"以外の拡張子を与えられたら出力ファイルの".wav"を消す
 		await FixExtensionAsync(fullPathWavFile).ConfigureAwait(false);
@@ -42,13 +51,15 @@ public partial class WinTalkAutoService
 		await Task.Run(
 			() => _win.WaitUntilClickable(TimeSpan.FromSeconds(10))
 		).ConfigureAwait(false);
+
+		sw.Stop();
+		Console.WriteLine($"wait until time : {sw.Elapsed.TotalSeconds}");
+		sw.Restart();
 	}
 
 	internal static async ValueTask FixExtensionAsync(string fullPathWavFile)
 	{
 		if (fullPathWavFile.EndsWith(".wav", StringComparison.OrdinalIgnoreCase)) return;
-
-		var sw = System.Diagnostics.Stopwatch.StartNew();
 
 		await Task.Run(() =>
 		{
@@ -79,8 +90,5 @@ public partial class WinTalkAutoService
 
 			if(!r2.Success) throw new FileNotFoundException(newfull);
 		}).ConfigureAwait(false);
-
-		sw.Stop();
-		Console.WriteLine($"fix ext. time : {sw.Elapsed.TotalSeconds}");
 	}
 }
