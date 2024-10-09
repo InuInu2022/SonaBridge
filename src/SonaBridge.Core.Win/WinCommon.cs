@@ -88,7 +88,7 @@ public sealed class WinCommon
 						.ModalWindows
 						.FirstOrDefault(w => w.Title.Contains(titleContainText, StringComparison.Ordinal));
 				},
-				TimeSpan.FromSeconds(10),
+				TimeSpan.FromSeconds(3),
 				TimeSpan.FromMilliseconds(300))
 			).ConfigureAwait(false);
 		return result.Success ? result.Result : null;
