@@ -22,6 +22,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
+	private IEnumerable<string> VoiceList { get; set; }
 
 	internal Window? TopWindow { get => _win; }
 
@@ -105,18 +106,16 @@ public partial class WinTalkAutoService : ITalkAutoService
 		}
 
 		using var automation = new UIA3Automation();
-		var result = await GetVoiceListAsync(automation).ConfigureAwait(false);
-		foreach (var item in result.Result ?? [])
+		var result = await GetVoiceListAsync().ConfigureAwait(false);
+		foreach (var item in result)
 		{
 			Console.WriteLine(item.Name);
 			System.Diagnostics.Debug.WriteLine(item.Name);
 		}
-		var items1 = result.Result?.Select(v => v.Name).ToList();
+		var voiceNames = result.Select(v => v.Name).ToList();
 
-		return items1 ?? [];
+		return voiceNames ?? [];
 	}
-
-
 
 	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
 	{
@@ -130,10 +129,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 		}
 
 		using var automation = new UIA3Automation();
-		var result = await GetVoiceListAsync(automation).ConfigureAwait(false);
-		if (!result.Success) return result.Success;
-		var items1 = result.Result?.Select(v => v.Name).ToList();
-		var voice = result.Result?
+		var result = await GetVoiceListAsync().ConfigureAwait(false);
+		var items1 = result.Select(v => v.Name).ToList();
+		var voice = result
 			.FirstOrDefault(v => string.Equals(v.Name, voiceName, StringComparison.Ordinal))
 			.AsMenuItem()
 			;
@@ -206,26 +204,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return modals;
 	}
 
-	static async Task<RetryResult<AutomationElement[]?>>
-	GetVoiceListAsync(UIA3Automation automation)
+	static async Task<AutomationElement[]>
+	GetVoiceListAsync()
 	{
-		return await Task
-			.Run(() => Retry.WhileNull(
-				() =>
-				{
-					var wins = automation
-						.GetDesktop()
-						.FindAllDescendants(
-							f => f.ByFrameworkId("JUCE")
-								.And(f.ByControlType(ControlType.MenuItem))
-						);
-					return wins.Length == 0 ? null : wins;
-				},
-				timeout: TimeSpan.FromSeconds(30),
-				interval: TimeSpan.FromSeconds(0.1),
-				ignoreException: true
-			))
-			.ConfigureAwait(false);
+		return await GetModalMenuItems().ConfigureAwait(false);
 	}
 
 	ComboBox? GetVoiceCombo()
