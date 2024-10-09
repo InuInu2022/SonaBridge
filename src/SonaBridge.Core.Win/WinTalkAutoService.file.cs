@@ -55,7 +55,7 @@ public partial class WinTalkAutoService
 			var r1 = Retry.WhileFalse(
 				() => File.Exists(chk),
 				TimeSpan.FromSeconds(10),
-				TimeSpan.FromSeconds(1),
+				TimeSpan.FromSeconds(0.1),
 				ignoreException:true
 			);
 
@@ -73,7 +73,7 @@ public partial class WinTalkAutoService
 					);
 				},
 				TimeSpan.FromSeconds(10),
-				TimeSpan.FromSeconds(1)
+				TimeSpan.FromSeconds(0.1)
 			);
 
 			if(!r2.Success) throw new FileNotFoundException(newfull);
