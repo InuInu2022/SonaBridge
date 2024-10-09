@@ -42,23 +42,6 @@ public sealed class WinCommon
 	)
 	{
 		//modal dialog
-		/*
-		var result = await Task
-			.Run(() =>
-				Retry.WhileNull(() =>
-				{
-					//SendSaveWavFileShortcutKeyAsync().AsTask().Wait();
-					var d = window
-						.ModalWindows
-						.FirstOrDefault(w => w.Title.Contains(saveDialogTitle, StringComparison.Ordinal));
-					return d;
-				},
-				TimeSpan.FromSeconds(30),
-				TimeSpan.FromMilliseconds(300))
-			).ConfigureAwait(false);
-		if (!result.Success) return;
-		var saveDialog = result.Result;
-		*/
 		var saveDialog = await GetWin32DialogAsync(window, saveDialogTitle)
 			.ConfigureAwait(false);
 		if (saveDialog is null) return;

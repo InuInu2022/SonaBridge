@@ -153,7 +153,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			TimeSpan.FromSeconds(30),
 			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
-		await Task.Delay(100).ConfigureAwait(false);	//安全策
+		await Task.Delay(200).ConfigureAwait(false);	//安全策
 
 		return true;
 	}
