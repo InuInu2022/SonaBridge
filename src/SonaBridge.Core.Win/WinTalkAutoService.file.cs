@@ -66,7 +66,7 @@ public partial class WinTalkAutoService
 			var r2 = Retry.WhileException(
 				()=>{
 
-					File.Copy(
+					File.Move(
 						chk,
 						newfull,
 						overwrite: true

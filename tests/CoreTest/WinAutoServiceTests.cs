@@ -178,7 +178,10 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		);
 		await using var fs = File.Create($"{path}.wav");
 		fs.Close();
+		var sw = System.Diagnostics.Stopwatch.StartNew();
 		await WinTalkAutoService.FixExtensionAsync(path);
+		sw.Stop();
+		_output.WriteLine($"fix ext. time: {sw.Elapsed.TotalSeconds} sec.");
 		Path.Exists(path).Should().BeTrue();
 	}
 }
