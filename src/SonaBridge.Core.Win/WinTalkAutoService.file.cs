@@ -1,10 +1,5 @@
-using System;
-
 using FlaUI.Core.AutomationElements;
-using FlaUI.Core.Definitions;
-using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
-using FlaUI.Core.WindowsAPI;
 
 namespace SonaBridge.Core.Win;
 

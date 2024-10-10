@@ -1,39 +1,12 @@
-using System;
-
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
-using FlaUI.Core.WindowsAPI;
-
-using SharpHook;
-using SharpHook.Native;
 
 namespace SonaBridge.Core.Win;
 
 public sealed class WinCommon
 {
-	internal static async ValueTask SendSaveWavFileShortcutKeyAsync(
-		KeyCode mainKey = KeyCode.VcW,
-		KeyCode? subKey = KeyCode.VcLeftControl
-	)
-	{
-		var simulator = new EventSimulator();
-
-		// Press
-		if(subKey is {} key){simulator.SimulateKeyPress(key);}
-		simulator.SimulateKeyPress(mainKey);
-
-		// Release
-		simulator.SimulateKeyRelease(mainKey);
-		if (subKey is { } key2) { simulator.SimulateKeyRelease(key2); }
-
-		await Task.Run(() =>
-			Wait.UntilInputIsProcessed(TimeSpan.FromSeconds(30)))
-			.ConfigureAwait(false);
-		//await Task.Delay(100).ConfigureAwait(false);
-	}
-
 	internal static async ValueTask SaveWavFileAsync(
 		Window window,
 		string pathAndFileName,

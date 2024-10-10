@@ -22,7 +22,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
-	private string _lastVoiceName;
+	private string? _lastVoiceName;
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
@@ -143,7 +143,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		voice.Focus();
 		voice.Expand();
-		await SetVoiceInnerAsync(automation).ConfigureAwait(false);
+		await WinTalkAutoService.SetVoiceInnerAsync(automation).ConfigureAwait(false);
 
 		//wait
 		await Task.Run(()=>
@@ -175,7 +175,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		}
 	}
 
-	async Task<RetryResult<AutomationElement[]?>> SetVoiceInnerAsync(UIA3Automation automation){
+	static async Task<RetryResult<AutomationElement[]?>> SetVoiceInnerAsync(UIA3Automation automation){
 		var modals = await Task
 			.Run(() => Retry.WhileNull(
 				() =>
