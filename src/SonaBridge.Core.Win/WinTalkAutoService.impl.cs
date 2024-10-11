@@ -22,8 +22,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
-	[ThreadStatic]
-	private static string? _lastVoiceName;
+	private string? _lastVoiceName;
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
@@ -123,7 +122,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
 	{
-		if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) return true;
+		//if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) return true;
 
 		ComboBox? cb = GetVoiceCombo();
 
