@@ -36,6 +36,8 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>
 	public async void SetCastAsync()
 	{
 		await _service.SetCastAsync("Sato Sasara");
+		await _service.SetCastAsync("Takahashi");
+		await _service.SetCastAsync("Tamaki");
 	}
 
 	[Fact]
