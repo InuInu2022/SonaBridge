@@ -22,7 +22,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
-	private string? _lastVoiceName;
+	[ThreadStatic]
+	private static string? _lastVoiceName;
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
