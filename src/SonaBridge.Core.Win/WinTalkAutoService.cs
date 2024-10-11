@@ -16,8 +16,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 		CancellationToken? token = null)
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
 		await SetUtterance(text).ConfigureAwait(false);
 		await PlayUtterance(token).ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 
 		return true;
 	}
@@ -25,7 +27,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 	public async Task<string[]> GetAvailableCastsAsync()
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
 		var voices = await GetVoiceNames().ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		return [.. voices];
 	}
 
@@ -39,7 +43,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 	public async ValueTask SetCastAsync(string castName)
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
 		var result = await SetVoiceAsync(castName).ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		if(!result){
 			throw new InvalidOperationException("FlaUI operation error!");
 		}
@@ -48,6 +54,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	public async Task<bool> OutputWaveToFileAsync(string text, string path)
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
 		await SetUtterance(text).ConfigureAwait(false);
 
 		Debug.WriteLine($"output wav file: {path}");
@@ -60,8 +67,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 		catch (System.Exception e)
 		{
 			Console.Error.WriteLine(e.Message);
+			await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 			return false;
 		}
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 
 		return true;
 	}

@@ -5,7 +5,7 @@ using FlaUI.Core.Tools;
 
 namespace SonaBridge.Core.Win;
 
-public sealed class WinCommon
+public sealed partial class WinCommon
 {
 	internal static async ValueTask SaveWavFileAsync(
 		Window window,

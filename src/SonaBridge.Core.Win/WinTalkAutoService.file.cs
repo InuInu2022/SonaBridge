@@ -49,7 +49,7 @@ public partial class WinTalkAutoService
 
 		sw.Stop();
 		Console.WriteLine($"wait until time : {sw.Elapsed.TotalSeconds}");
-		sw.Restart();
+		//sw.Restart();
 	}
 
 	internal static async ValueTask FixExtensionAsync(string fullPathWavFile)
