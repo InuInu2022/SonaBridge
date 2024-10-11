@@ -157,8 +157,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 			TimeSpan.FromSeconds(10),
 			TimeSpan.FromMilliseconds(100))
 		).ConfigureAwait(false);
-		//await Task.Delay(200).ConfigureAwait(false);	//安全策
+		await Task.Delay(50).ConfigureAwait(false);	//安全策
 
+		Console.WriteLine($"last:{_lastVoiceName}, set:{voiceName}");
 		_lastVoiceName = voiceName;
 
 		return true;
