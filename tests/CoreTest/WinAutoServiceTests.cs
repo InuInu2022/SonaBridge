@@ -2,38 +2,53 @@ using FlaUI.Core.AutomationElements;
 
 using FluentAssertions;
 
+using SonaBridge.Core.Common;
 using SonaBridge.Core.Win;
 
 using Xunit.Abstractions;
 
 namespace CoreTest;
 
-public class WinAutoServiceTests(ITestOutputHelper output)
+public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 {
-	private readonly ITestOutputHelper _output = output;
+	private readonly ServiceFixture _fixture;
+	private readonly WinTalkAutoService _service;
+	private readonly ITestOutputHelper _output;
+
+	public WinAutoServiceTests(
+		ServiceFixture fixture,
+		ITestOutputHelper output
+	)
+	{
+		_fixture = fixture;
+		_service = new WinTalkAutoService();
+		_output = output;
+	}
+
+
 
 	[Fact]
 	public async Task GetAppAsync()
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
+		//var service = new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
 	}
 
 	[Fact]
 	public async Task PlayAsync()
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		await service.PlayUtterance();
+		//var service = new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		await _service.PlayUtterance();
 	}
 
 	[Theory]
 	[InlineData(3)]
 	public async Task GetIndexAsync(int index)
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		var result = service.GetUtterancePosition();
+		//var service = new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		var result = _service.GetUtterancePosition();
 
 		Assert.Equal(index, result);
 	}
@@ -41,9 +56,9 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[InlineData(6)]
 	public async Task GetLenIndex(int index)
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		var result = service.GetLengthPosition();
+		//var service = new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		var result = _service.GetLengthPosition();
 
 		Assert.Equal(index, result);
 	}
@@ -52,9 +67,9 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[InlineData("テスト")]
 	public async Task SetText(string text)
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		await service.SetUtterance(text);
+		//var _service.= new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		await _service.SetUtterance(text);
 	}
 
 	[Theory]
@@ -64,10 +79,10 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[InlineData("あめんぼ甘いな、あいうえお。")]
 	public async Task PlayTextAsync(string text)
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		await service.SetUtterance(text);
-		await service.PlayUtterance();
+		//var _service.= new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		await _service.SetUtterance(text);
+		await _service.PlayUtterance();
 
 		await Task.Delay(1000);
 	}
@@ -75,9 +90,9 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[Fact]
 	public async void GetVoices()
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		var items = await service.GetVoiceNames();
+		//var _service.= new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		var items = await _service.GetVoiceNames();
 
 		items.ToList().ForEach(v => _output.WriteLine($"voice: {v}") );
 
@@ -92,23 +107,23 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	//[InlineData("No Name Voice", false)]
 	public async void SetVoice(string name, bool expected)
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
-		var result = await service.SetVoiceAsync(name);
+		//var _service.= new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
+		var result = await _service.SetVoiceAsync(name);
 
 		result.Should().Be(expected);
-		await service.PlayUtterance();
+		await _service.PlayUtterance();
 	}
 
 	[Fact]
 	public async void SetCastAsyncThrowsInvalidOperationExceptionWhenCastNameNotFound()
 	{
-		var service = new WinTalkAutoService();
-		await service.GetAppWindowAsync();
+		//var _service.= new WinTalkAutoService();
+		await _service.GetAppWindowAsync();
 
 		var ex = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
 		{
-			await service.SetCastAsync("NonExistentCastName")
+			await _service.SetCastAsync("NonExistentCastName")
 			.ConfigureAwait(true);
 		});
 
@@ -127,13 +142,13 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		string text
 	)
 	{
-		var service = new WinTalkAutoService();
-		await service.SetCastAsync(castName);
-		await service.SpeakAsync(text);
-		//await service.GetAppWindowAsync();
-		//var result = await service.SetVoiceAsync(castName);
-		//await service.SetUtterance(text);
-		//await service.PlayUtterance();
+		//var _service.= new WinTalkAutoService();
+		await _service.SetCastAsync(castName);
+		await _service.SpeakAsync(text);
+		//await _service.GetAppWindowAsync();
+		//var result = await _service.SetVoiceAsync(castName);
+		//await _service.SetUtterance(text);
+		//await _service.PlayUtterance();
 	}
 
 	[Theory]
@@ -148,10 +163,10 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		string text
 	)
 	{
-		var service = new WinTalkAutoService();
+		//var _service.= new WinTalkAutoService();
 
 		var sw = System.Diagnostics.Stopwatch.StartNew();
-		await service.SetCastAsync(castName);
+		await _service.SetCastAsync(castName);
 		var path = Path.Combine(
 			Path.GetTempPath(),
 			$"{castName}_{text}"
@@ -159,13 +174,13 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		sw.Stop();
 		_output.WriteLine($"set time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
 		sw.Restart();
-		var result = await service.OutputWaveToFileAsync(text, path);
+		var result = await _service.OutputWaveToFileAsync(text, path);
 		sw.Stop();
 
 		_output.WriteLine($"output time: {sw.Elapsed.TotalSeconds} sec., {castName},{text}");
 
 		result.Should().BeTrue();
-		Path.Exists($"{path}.wav").Should().BeTrue();
+		Path.Exists($"{path}").Should().BeTrue();
 	}
 
 	[Theory]
@@ -173,7 +188,7 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[InlineData("abc")]
 	public async void FixExtention(string ext)
 	{
-		var service = new WinTalkAutoService();
+		//var _service.= new WinTalkAutoService();
 		var path = Path.Combine(
 			Path.GetTempPath(),
 			$"{Path.GetRandomFileName()}.{ext}"
@@ -190,16 +205,16 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[Fact]
 	public async void OpenGlobalParamsPanel()
 	{
-		var service = new WinTalkAutoService();
+		//var _service.= new WinTalkAutoService();
 		var sw = System.Diagnostics.Stopwatch.StartNew();
 
-		await service.OpenGlobalParamsPanelAsync();
+		await _service.OpenGlobalParamsPanelAsync();
 
 		sw.Stop();
 		_output.WriteLine($"1 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
 		sw.Restart();
 
-		await service.OpenGlobalParamsPanelAsync();
+		await _service.OpenGlobalParamsPanelAsync();
 
 		sw.Stop();
 		_output.WriteLine($"2 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
@@ -208,10 +223,10 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 	[Fact]
 	public async void GetGlobalParamSliders()
 	{
-		var service = new WinTalkAutoService();
+		//var _service.= new WinTalkAutoService();
 		var sw = System.Diagnostics.Stopwatch.StartNew();
 
-		var sliders = await service.GetGlobalParamSliders();
+		var sliders = await _service.GetGlobalParamSliders();
 
 		sw.Stop();
 		foreach(var s in sliders)
@@ -221,7 +236,7 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		}
 		_output.WriteLine($"get sliders. time: {sw.Elapsed.TotalSeconds} sec.");
 
-		var values = await service.GetCurrentGlobalParamAsync();
+		var values = await _service.GetCurrentGlobalParamAsync();
 		foreach (var item in values)
 		{
 			_output.WriteLine($"Value: {item.Key}, {item.Value:F2} ");
@@ -250,15 +265,15 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		bool hasKey = true,
 		bool expect = true)
 	{
-		var service = new WinTalkAutoService();
+		//var _service.= new WinTalkAutoService();
 		var sw = System.Diagnostics.Stopwatch.StartNew();
 
-		await service.SetCurrentGlobalParamsAsync(
+		await _service.SetCurrentGlobalParamsAsync(
 			new Dictionary<string,double>(StringComparer.Ordinal){
 				{key, value},
 			});
 
-		var values = await service.GetCurrentGlobalParamAsync();
+		var values = await _service.GetCurrentGlobalParamAsync();
 		sw.Stop();
 		_output.WriteLine($"SetGlobalParamSingle time: {sw.Elapsed.TotalSeconds} sec.");
 		values.TryGetValue(key, out var finded)
