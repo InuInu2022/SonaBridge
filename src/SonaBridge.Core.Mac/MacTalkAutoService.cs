@@ -1,4 +1,6 @@
 ﻿
+using System.Collections.ObjectModel;
+
 using SonaBridge.Core.Common;
 
 namespace SonaBridge.Core.Mac;
@@ -15,12 +17,22 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<bool> OutputWaveToFileAsync(string text, string path)
 	{
 		throw new NotSupportedException();
 	}
 
 	public ValueTask SetCastAsync(string castName)
+	{
+		throw new NotSupportedException();
+	}
+
+	public Task SetGlobalParamsAsync(IDictionary<string, double> styles)
 	{
 		throw new NotSupportedException();
 	}
