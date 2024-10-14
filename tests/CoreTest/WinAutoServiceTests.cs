@@ -1,3 +1,5 @@
+using FlaUI.Core.AutomationElements;
+
 using FluentAssertions;
 
 using SonaBridge.Core.Win;
@@ -183,5 +185,85 @@ public class WinAutoServiceTests(ITestOutputHelper output)
 		sw.Stop();
 		_output.WriteLine($"fix ext. time: {sw.Elapsed.TotalSeconds} sec.");
 		Path.Exists(path).Should().BeTrue();
+	}
+
+	[Fact]
+	public async void OpenGlobalParamsPanel()
+	{
+		var service = new WinTalkAutoService();
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
+		await service.OpenGlobalParamsPanelAsync();
+
+		sw.Stop();
+		_output.WriteLine($"1 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
+		sw.Restart();
+
+		await service.OpenGlobalParamsPanelAsync();
+
+		sw.Stop();
+		_output.WriteLine($"2 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
+	}
+
+	[Fact]
+	public async void GetGlobalParamSliders()
+	{
+		var service = new WinTalkAutoService();
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
+		var sliders = await service.GetGlobalParamSliders();
+
+		sw.Stop();
+		foreach(var s in sliders)
+		{
+			var s2 = s.AsSlider();
+			_output.WriteLine($"Slider: {s2.Value}, max:{s2.Maximum} min:{s2.Minimum}");
+		}
+		_output.WriteLine($"get sliders. time: {sw.Elapsed.TotalSeconds} sec.");
+
+		var values = await service.GetCurrentGlobalParamAsync();
+		foreach (var item in values)
+		{
+			_output.WriteLine($"Value: {item.Key}, {item.Value:F2} ");
+		}
+	}
+
+	[Theory]
+	[InlineData("Hoge", 1.0, false, false)]
+	[InlineData("Speed", 1.0)]
+	[InlineData("Speed", 0.2)]
+	[InlineData("Speed", 5.0)]
+	[InlineData("Speed", 100.0, true, false)]
+	[InlineData("Speed", 0.0, true, false)]
+	[InlineData("Volume", 1.0)]
+	[InlineData("Volume", 8.0)]
+	[InlineData("Volume", -8.0)]
+	[InlineData("Pitch", 1.0)]
+	[InlineData("Pitch", 600.0)]
+	[InlineData("Pitch", -600.0)]
+	[InlineData("Alpha", 1.0)]
+	[InlineData("Into.", 1.0)]
+	[InlineData("Hus.", 1.0)]
+	public async void SetGlobalParamSingle(
+		string key,
+		double value,
+		bool hasKey = true,
+		bool expect = true)
+	{
+		var service = new WinTalkAutoService();
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
+		await service.SetCurrentGlobalParamsAsync(
+			new Dictionary<string,double>(StringComparer.Ordinal){
+				{key, value},
+			});
+
+		var values = await service.GetCurrentGlobalParamAsync();
+		sw.Stop();
+		_output.WriteLine($"SetGlobalParamSingle time: {sw.Elapsed.TotalSeconds} sec.");
+		values.TryGetValue(key, out var finded)
+			.Should().Be(hasKey);
+		var isSame = Math.Abs(finded - value) < 0.01;
+		isSame.Should().Be(expect);
 	}
 }

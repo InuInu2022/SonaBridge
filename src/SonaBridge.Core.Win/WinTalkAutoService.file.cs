@@ -43,9 +43,8 @@ public partial class WinTalkAutoService
 		// ".wav"以外の拡張子を与えられたら出力ファイルの".wav"を消す
 		await FixExtensionAsync(fullPathWavFile).ConfigureAwait(false);
 
-		await Task.Run(
-			() => _win.WaitUntilClickable(TimeSpan.FromSeconds(10))
-		).ConfigureAwait(false);
+		await _win.WaitUntilClickableAsync(TimeSpan.FromSeconds(10))
+			.ConfigureAwait(false);
 
 		sw.Stop();
 		Console.WriteLine($"wait until time : {sw.Elapsed.TotalSeconds}");

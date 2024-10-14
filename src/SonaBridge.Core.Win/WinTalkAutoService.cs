@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 
 using SonaBridge.Core.Common;
 
@@ -73,5 +74,19 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 
 		return true;
+	}
+
+	public async Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		return await GetCurrentGlobalParamAsync()
+			.ConfigureAwait(false);
+	}
+
+	public async Task SetGlobalParamsAsync(IDictionary<string, double> styles)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await SetCurrentGlobalParamsAsync(styles)
+			.ConfigureAwait(false);
 	}
 }

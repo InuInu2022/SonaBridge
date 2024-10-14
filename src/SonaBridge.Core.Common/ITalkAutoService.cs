@@ -1,6 +1,6 @@
 namespace SonaBridge.Core.Common;
 
-public interface ITalkAutoService : IAutoService
+public partial interface ITalkAutoService : IAutoService
 {
 	/// <summary>
 	/// 指定したセリフの再生を開始します。
