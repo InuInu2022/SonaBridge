@@ -281,4 +281,74 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 		var isSame = Math.Abs(finded - value) < 0.01;
 		isSame.Should().Be(expect);
 	}
+
+	[Theory]
+	[InlineData("Tanaka San")]
+
+	public async void GetStyleSliders(string voice)
+	{
+		//var _service.= new WinTalkAutoService();
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
+		var sliders = await _service.GetStyleSlidersAsync(voice);
+
+		sw.Stop();
+		foreach(var s in sliders)
+		{
+			var s2 = s.AsSlider();
+			_output.WriteLine($"Slider: {s2.Value}, max:{s2.Maximum} min:{s2.Minimum}");
+		}
+		_output.WriteLine($"get sliders. time: {sw.Elapsed.TotalSeconds} sec.");
+
+		sw.Restart();
+		var names = await _service.GetCurrentStyleNamesAsync();
+		sw.Stop();
+		foreach (var item in names)
+		{
+			_output.WriteLine($"Style name: {item} ");
+		}
+		_output.WriteLine($"get style names time: {sw.Elapsed.TotalSeconds} sec.");
+
+		sw.Restart();
+		var values = await _service.GetCurrentStylesAsync(voice);
+		sw.Stop();
+		foreach (var item in values)
+		{
+			_output.WriteLine($"Value: {item.Key}, {item.Value:F2} ");
+		}
+		_output.WriteLine($"get style time: {sw.Elapsed.TotalSeconds} sec.");
+
+	}
+
+	[Theory]
+	[InlineData("Tanaka San","Hoge", 1.0, false, false)]
+	[InlineData("Tanaka San","Normal", 1.0)]
+	[InlineData("Tanaka San","Normal", 0.0)]
+	[InlineData("Tanaka San","Normal", 0.5)]
+	[InlineData("Futaba Minato","Child", 0.23)]
+	[InlineData("Futaba Minato","Shy", 0.78)]
+	public async void SetStyleSingle(
+		string voice,
+		string key,
+		double value,
+		bool hasKey = true,
+		bool expect = true)
+	{
+		await _service.SetCastAsync(voice);
+		var sw = System.Diagnostics.Stopwatch.StartNew();
+
+		await _service.SetCurrentStylesAsync(
+			voice,
+			new Dictionary<string,double>(StringComparer.Ordinal){
+				{key, value},
+			});
+
+		var values = await _service.GetCurrentStylesAsync(voice);
+		sw.Stop();
+		_output.WriteLine($"SetStyleSingle time: {sw.Elapsed.TotalSeconds} sec.");
+		values.TryGetValue(key, out var finded)
+			.Should().Be(hasKey);
+		var isSame = Math.Abs(finded - value) < 0.01;
+		isSame.Should().Be(expect);
+	}
 }

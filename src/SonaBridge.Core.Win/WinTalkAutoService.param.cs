@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Tools;
+using FlaUI.UIA3;
 
 namespace SonaBridge.Core.Win;
 
@@ -10,7 +11,10 @@ namespace SonaBridge.Core.Win;
 public partial class WinTalkAutoService
 {
 	static ToggleButton? gPanelToggle;
+	static Button? styleBarButton;
 	static Slider[]? gParamSliders;
+	static Slider[]? styleSliders;
+	static string? lastVoiceName;
 	static readonly Dictionary<string,(double max, double min, double, double)> gParam = new(StringComparer.Ordinal)
 	{
 		{"Speed", (5.0, 0.2, 0.048, 0.048)},
@@ -56,6 +60,7 @@ public partial class WinTalkAutoService
 			return gParamSliders;
 		}
 		await GetAppWindowAsync().ConfigureAwait(false);
+		await OpenGlobalParamsPanelAsync().ConfigureAwait(false);
 		var result = await Task
 			.Run(() => Retry.WhileNull(
 				() =>
@@ -116,12 +121,174 @@ public partial class WinTalkAutoService
 		{
 			if(!gParam.TryGetValue(item.Key, out var value))
 			{
-				Console.Error.WriteLine($"[{nameof(SetCurrentGlobalParamsAsync)}] Key {item.Key} not found");
+				await Console.Error
+					.WriteLineAsync($"[{nameof(SetCurrentGlobalParamsAsync)}] Key {item.Key} not found")
+					.ConfigureAwait(false);
 				continue;
 			}
 			var p = FindGParamSlider(sliders, value);
 			if (p is null) continue;
 			p.Value = Math.Max(value.min, Math.Min(item.Value, value.max));
+			await p.WaitUntilEnabledAsync()
+				.ConfigureAwait(false);
+		}
+	}
+
+	internal async ValueTask SetStyleBarTabEnabledAsync()
+	{
+		if(styleBarButton is null)
+		{
+			styleBarButton = await GetStyleBarButton().ConfigureAwait(false);
+		}
+		if (styleBarButton is null) return;
+		await styleBarButton!.WaitUntilClickableAsync().ConfigureAwait(false);
+		styleBarButton?.Invoke();
+		await styleBarButton!.WaitUntilEnabledAsync().ConfigureAwait(false);
+	}
+
+	async ValueTask<Button?> GetStyleBarButton()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		var result = await Task
+			.Run(() => Retry.WhileNull(
+				() => _win?
+					.FindAllDescendants(f =>
+						f.ByName("Bar")
+						.And(f.ByControlType(ControlType.Button))
+					)
+					.FirstOrDefault()
+					.AsButton(),
+				timeout: TimeSpan.FromSeconds(3),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+		if (!result.Success) return default;
+		return result.Result;
+	}
+
+	internal async ValueTask<Slider[]> GetStyleSlidersAsync(
+		string voiceName
+	)
+	{
+		if(styleSliders?.Length > 0
+			&& string.Equals(lastVoiceName, voiceName, StringComparison.Ordinal))
+		{
+			return styleSliders;
+		}
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await OpenGlobalParamsPanelAsync().ConfigureAwait(false);
+		await SetStyleBarTabEnabledAsync().ConfigureAwait(false);
+		lastVoiceName = voiceName;
+		var result = await Task
+			.Run(() => Retry.WhileNull(
+				() =>
+				{
+					var sliders = _win?
+						.FindAllDescendants(f =>
+							f.ByFrameworkId("JUCE")
+							.And(f.ByControlType(ControlType.Slider))
+						)
+						.Select(e => e.AsSlider())
+						.Where(s => s.SmallChange == 0.01 && s.Minimum == 0 && s.Maximum == 1)
+						.ToArray()
+						;
+					return sliders is [] ? null : sliders;
+				},
+				timeout: TimeSpan.FromSeconds(3),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+		if (!result.Success) return [];
+		styleSliders = result.Result ?? [];
+		return styleSliders;
+	}
+
+	// 0.75 sec.
+	internal async ValueTask<ReadOnlyDictionary<string, double>>
+	GetCurrentStylesAsync(string voiceName)
+	{
+		var sliders = await GetStyleSlidersAsync(voiceName)
+			.ConfigureAwait(false);
+		var names = await GetCurrentStyleNamesAsync()
+			.ConfigureAwait(false);
+		var dic = sliders
+			.Zip(names, (slider, name) => (name, slider.Value))
+			.ToDictionary(x => x.name, x => x.Value, StringComparer.Ordinal);
+		return new(dic);
+	}
+
+	//time: 0.7588927 sec.
+	internal async ValueTask<IReadOnlyList<string>>
+	GetCurrentStyleNamesAsync()
+	{
+		styleBarButton ??= await GetStyleBarButton().ConfigureAwait(false);
+		var group = styleBarButton?.Parent;
+		using var automation = new UIA3Automation();
+		var walker = automation.TreeWalkerFactory.GetRawViewWalker();
+		walker.GetNextSibling(group);
+
+		AutomationElement? lastElem = group;
+		await Task
+			.Run(() => Retry.WhileFalse(
+				() =>
+				{
+					var elem = walker.GetNextSibling(lastElem);
+					var isText = elem.ControlType == ControlType.Text;
+					lastElem = elem;
+					return isText;
+				},
+				timeout: TimeSpan.FromSeconds(3),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+
+		AutomationElement? lastText = lastElem.AsTextBox();
+		List<TextBox> textBoxes = [lastText.AsTextBox()];
+		await Task
+			.Run(() => Retry.WhileTrue(
+				() =>
+				{
+					var elem = walker.GetNextSibling(lastText);
+					var isText = elem.ControlType == ControlType.Text;
+					lastText = elem;
+					if(isText) {
+						textBoxes.Add(elem.AsTextBox());
+					}
+					return isText;
+				},
+				timeout: TimeSpan.FromSeconds(3),
+				interval: TimeSpan.FromSeconds(0.1),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+		return textBoxes.ConvertAll(t => t.Text);
+	}
+
+	// 1.4 sec.
+	internal async ValueTask
+	SetCurrentStylesAsync(string voiceName, IDictionary<string, double> styles)
+	{
+		SetFocusFirstRow();
+		var sliders = await GetStyleSlidersAsync(voiceName)
+			.ConfigureAwait(false);
+		var names = await GetCurrentStyleNamesAsync()
+			.ConfigureAwait(false);
+		foreach (var item in styles)
+		{
+			if(!names.Contains(item.Key, StringComparer.Ordinal))
+			{
+				await Console.Error
+					.WriteLineAsync($"[{nameof(SetCurrentStylesAsync)}] Key {item.Key} not found")
+					.ConfigureAwait(false);
+				continue;
+			}
+			var index = names.ToList().IndexOf(item.Key);
+			var p = sliders[index];
+			if (p is null) continue;
+			p.Value = Math.Max(0.0, Math.Min(item.Value, 1.0));
 			await p.WaitUntilEnabledAsync()
 				.ConfigureAwait(false);
 		}
