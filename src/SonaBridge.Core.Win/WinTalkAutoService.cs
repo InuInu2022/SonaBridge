@@ -83,10 +83,28 @@ public partial class WinTalkAutoService : ITalkAutoService
 			.ConfigureAwait(false);
 	}
 
-	public async Task SetGlobalParamsAsync(IDictionary<string, double> styles)
+	public async ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
-		await SetCurrentGlobalParamsAsync(styles)
+		await SetCurrentGlobalParamsAsync(globalParams)
 			.ConfigureAwait(false);
+	}
+
+	public async Task<ReadOnlyDictionary<string, double>>
+	GetStylesAsync(string voiceName)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+		var result = await GetStylesAsync(voiceName).ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+		return result;
+	}
+
+	public async ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+		await SetStylesAsync(voiceName, styles).ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 	}
 }

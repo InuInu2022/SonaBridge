@@ -14,7 +14,21 @@ public partial interface ITalkAutoService : IAutoService
 	/// <summary>
 	/// 現在のキャストにグローバルパラメータを設定します。
 	/// </summary>
-	/// <param name="styles">パラメータ名と値。値はUIと同じものを渡してください。範囲外の値は丸められます。</param>
+	/// <param name="globalParams">パラメータ名と値。値はUIと同じものを渡してください。範囲外の値は丸められます。</param>
 	/// <returns></returns>
-	Task SetGlobalParamsAsync(IDictionary<string, double> styles);
+	ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams);
+
+	/// <summary>
+	/// 指定したキャスト（ボイスライブラリ）のスタイル一覧を取得します。
+	/// </summary>
+	/// <param name="voiceName">ボイスライブラリ名</param>
+	/// <returns></returns>
+	Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName);
+
+	/// <summary>
+	/// 指定したキャスト（ボイスライブラリ）にスタイルを設定します。
+	/// </summary>
+	/// <param name="voiceName">ボイスライブラリ名</param>
+	/// <param name="styles">スタイル名と値。値はUIと同じものを渡してください。範囲外の値は丸められます。</param>
+	ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles);
 }

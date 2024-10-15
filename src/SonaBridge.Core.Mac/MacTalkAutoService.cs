@@ -22,6 +22,11 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName)
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<bool> OutputWaveToFileAsync(string text, string path)
 	{
 		throw new NotSupportedException();
@@ -32,7 +37,12 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
-	public Task SetGlobalParamsAsync(IDictionary<string, double> styles)
+	public ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
+	{
+		throw new NotSupportedException();
+	}
+
+	public ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
 	{
 		throw new NotSupportedException();
 	}
