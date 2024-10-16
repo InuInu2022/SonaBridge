@@ -108,7 +108,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			cb.Expand();
 		}
 
-		using var automation = new UIA3Automation();
+		//using var automation = new UIA3Automation();
 		var result = await GetVoiceListAsync().ConfigureAwait(false);
 		foreach (var item in result)
 		{
@@ -117,6 +117,13 @@ public partial class WinTalkAutoService : ITalkAutoService
 		}
 		var voiceNames = result.Select(v => v.Name).ToList();
 		VoiceNames = [..voiceNames];
+
+		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Collapsed))
+		{
+			cb.Click();
+		}
+		await cb.WaitUntilClickableAsync().ConfigureAwait(false);
+
 		return VoiceNames ?? [];
 	}
 
