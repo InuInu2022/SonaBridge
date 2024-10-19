@@ -186,7 +186,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 	[Theory]
 	[InlineData("tmp")]
 	[InlineData("abc")]
-	public async void FixExtention(string ext)
+	public async void FixExtension(string ext)
 	{
 		//var _service.= new WinTalkAutoService();
 		var path = Path.Combine(
@@ -276,9 +276,9 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 		var values = await _service.GetCurrentGlobalParamAsync();
 		sw.Stop();
 		_output.WriteLine($"SetGlobalParamSingle time: {sw.Elapsed.TotalSeconds} sec.");
-		values.TryGetValue(key, out var finded)
+		values.TryGetValue(key, out var found)
 			.Should().Be(hasKey);
-		var isSame = Math.Abs(finded - value) < 0.01;
+		var isSame = Math.Abs(found - value) < 0.01;
 		isSame.Should().Be(expect);
 	}
 
@@ -346,9 +346,9 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 		var values = await _service.GetCurrentStylesAsync(voice);
 		sw.Stop();
 		_output.WriteLine($"SetStyleSingle time: {sw.Elapsed.TotalSeconds} sec.");
-		values.TryGetValue(key, out var finded)
+		values.TryGetValue(key, out var found)
 			.Should().Be(hasKey);
-		var isSame = Math.Abs(finded - value) < 0.01;
+		var isSame = Math.Abs(found - value) < 0.01;
 		isSame.Should().Be(expect);
 	}
 }
