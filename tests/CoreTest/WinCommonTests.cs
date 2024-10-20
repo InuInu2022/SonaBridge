@@ -3,15 +3,9 @@ using System.Diagnostics;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
-using FlaUI.Core.WindowsAPI;
 
 using FluentAssertions;
 
-using SharpHook;
-using SharpHook.Native;
-
-using SonaBridge;
-using SonaBridge.Core.Common;
 using SonaBridge.Core.Win;
 
 using Xunit.Abstractions;
@@ -27,7 +21,7 @@ public class WinCommonTests(ITestOutputHelper output)
 	[InlineData("これは音声保存のテストです")]
 	public async void WinSaveWavAsync(string text)
 	{
-		var service = new WinTalkAutoService();
+		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		await service.SetUtterance(text);
 
@@ -57,7 +51,7 @@ public class WinCommonTests(ITestOutputHelper output)
 	[Fact]
 	public async void SendKeyTest()
 	{
-		var service = new WinTalkAutoService();
+		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
 		await service.SetUtterance("あいうえお");
 		service.SetFocusFirstRow(true);

@@ -15,6 +15,7 @@ public class ServiceFixture : IDisposable
 
 	public void Dispose()
 	{
+		Service.Dispose();
 		provider.Dispose();
 	 	GC.SuppressFinalize(this);
 	}

@@ -9,11 +9,12 @@ using Xunit.Abstractions;
 
 namespace CoreTest;
 
-public class WinAutoServiceTests : IClassFixture<ServiceFixture>
+public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 {
 	private readonly ServiceFixture _fixture;
 	private readonly WinTalkAutoService _service;
 	private readonly ITestOutputHelper _output;
+	private bool _disposedValue;
 
 	public WinAutoServiceTests(
 		ServiceFixture fixture,
@@ -350,5 +351,23 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>
 			.Should().Be(hasKey);
 		var isSame = Math.Abs(found - value) < 0.01;
 		isSame.Should().Be(expect);
+	}
+
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!_disposedValue)
+		{
+			if (disposing)
+			{
+				_service.Dispose();
+			}
+			_disposedValue = true;
+		}
+	}
+
+	public void Dispose()
+	{
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
 	}
 }
