@@ -29,17 +29,21 @@ public static class AsyncRetry
 	}
 
 	public static async ValueTask WaitUntilEnabledAsync(
-		this AutomationElement elem,
+		this AutomationElement? elem,
 		TimeSpan? timeout = null
 	){
+		if (elem is null) return;
+
 		await Task.Run(() => elem.WaitUntilEnabled(timeout))
 			.ConfigureAwait(false);
 	}
 
 	public static async ValueTask WaitUntilClickableAsync(
-		this AutomationElement elem,
+		this AutomationElement? elem,
 		TimeSpan? timeout = null
 	){
+		if (elem is null) return;
+
 		await Task.Run(() => elem.WaitUntilClickable(timeout))
 			.ConfigureAwait(false);
 	}

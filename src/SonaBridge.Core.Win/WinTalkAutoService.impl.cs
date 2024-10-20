@@ -19,10 +19,12 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private Application? _app;
 	private Window? _win;
 	private AutomationElement? _table;
-	private int _uPos = -1;
+	private static int _uPos = -1;
 	private int _lenPos = -1;
 	private AutomationElement? _row;
 	private static string? _lastVoiceName;
+	private bool _disposedValue;
+	private readonly UIA3Automation _automation = new();
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
@@ -31,8 +33,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
-		using var automation = new UIA3Automation();
-		_win ??= _app?.GetAllTopLevelWindows(automation)[0];
+		_win ??= _app?.GetAllTopLevelWindows(_automation)[0];
 	}
 
 	internal async ValueTask PlayUtterance(
@@ -73,27 +74,32 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal async ValueTask SetUtterance(string text = "")
 	{
+		_win?.SetForeground();
+		await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
 		var col = GetUtterancePosition();
 		var edit = GetTextBox(col);
 
 		if (edit is null) return;
 		edit.FocusNative();
-		await Task
-			.Run(() => edit.WaitUntilEnabled(TimeSpan.FromSeconds(5)))
+		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(5))
 			.ConfigureAwait(false);
 		edit.Text = text;
 		//edit.Enter(text);
 		Keyboard.Press(VirtualKeyShort.RETURN);
 
-		await Task.Run(() =>
-			GetUtteranceEneble()
-				.WaitUntilEnabled(TimeSpan.FromSeconds(5))
-		).ConfigureAwait(false);
-		//await Task.Delay(100).ConfigureAwait(false);
-		//Keyboard.Press(VirtualKeyShort.RETURN);
-
-		//wait
-		//await Task.Delay(300).ConfigureAwait(false);
+		var checkbox = await Task.Run(()=>{
+			var result = Retry
+				.WhileNull(
+					() => GetUtteranceEnable(),
+					TimeSpan.FromSeconds(3),
+					TimeSpan.FromMilliseconds(100),
+					ignoreException:true
+				);
+			return result.Result;
+		}).ConfigureAwait(false);
+		await checkbox
+			.WaitUntilEnabledAsync(TimeSpan.FromSeconds(5))
+			.ConfigureAwait(false);
 	}
 
 	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
@@ -237,7 +243,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			.AsTextBox();
 	}
 
-	CheckBox? GetUtteranceEneble()
+	CheckBox? GetUtteranceEnable()
 	{
 		var row = GetRow();
 		var target = row?.FindFirstDescendant(
@@ -324,5 +330,23 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return result.Success ? result.Result : default;
 	}
 
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!_disposedValue)
+		{
+			if (disposing)
+			{
+				_automation.Dispose();
+			}
 
+			_disposedValue = true;
+		}
+	}
+
+	public void Dispose()
+	{
+		// このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
+	}
 }
