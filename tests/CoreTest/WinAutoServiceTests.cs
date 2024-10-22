@@ -296,10 +296,10 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 			new Dictionary<string,double>(StringComparer.Ordinal){
 				{key, value},
 			});
-
-		var values = await _service.GetCurrentGlobalParamAsync();
 		_sw.Stop();
-		_output.WriteLine($"SetGlobalParamSingle time: {_sw.Elapsed.TotalMilliseconds} ms.");
+		var values = await _service.GetCurrentGlobalParamAsync();
+
+		_output.WriteLine($"SetGlobalParamSingle[{key}] time: {_sw.Elapsed.TotalMilliseconds} ms.");
 		values.TryGetValue(key, out var found)
 			.Should().Be(hasKey);
 		var isSame = Math.Abs(found - value) < 0.01;
