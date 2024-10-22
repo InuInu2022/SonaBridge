@@ -1,4 +1,3 @@
-using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Tools;
 
 namespace SonaBridge.Core.Win;

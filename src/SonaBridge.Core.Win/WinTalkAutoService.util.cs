@@ -12,11 +12,10 @@ public partial class WinTalkAutoService
 	/// <returns></returns>
 	static async ValueTask<AutomationElement[]> GetModalMenuItems()
 	{
-		using var automation = new FlaUI.UIA3.UIA3Automation();
 		var result = await Task
 			.Run(() => Retry.WhileNull(
 				() => {
-					var ms = automation
+					var ms = _automation
 					.GetDesktop()
 					.FindAllChildren()
 					.FirstOrDefault(w =>

@@ -16,19 +16,22 @@ namespace SonaBridge.Core.Win;
 public partial class WinTalkAutoService : ITalkAutoService
 {
 	private readonly string _pathToVsTalk = """C:\Program Files\Techno-Speech\VoiSona Talk""";
-	private Application? _app;
-	private Window? _win;
-	private AutomationElement? _table;
+	private static Application? _app;
+	private static Window? _win;
+	private static AutomationElement? _table;
 	private static int _uPos = -1;
-	private int _lenPos = -1;
-	private AutomationElement? _row;
+	private static int _lenPos = -1;
+	private static AutomationElement? _row;
 	private static string? _lastVoiceName;
 	private bool _disposedValue;
-	private readonly UIA3Automation _automation = new();
+	private static ComboBox? _voiceCombo;
+	private static CheckBox? _utteranceCheckBox;
+	private static AutomationElement[]? _textBoxes;
+	private static readonly UIA3Automation _automation = new();
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
-	internal Window? TopWindow { get => _win; }
+	internal static Window? TopWindow { get => _win; }
 
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
@@ -36,7 +39,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		_win ??= _app?.GetAllTopLevelWindows(_automation)[0];
 	}
 
-	internal async ValueTask PlayUtterance(
+	internal static async ValueTask PlayUtterance(
 		CancellationToken? ctx = default
 	)
 	{
@@ -72,7 +75,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		System.Diagnostics.Debug.WriteLine($"len: {tp}, {t}");
 	}
 
-	internal async ValueTask SetUtterance(string text = "")
+	internal static async ValueTask SetUtterance(string text = "")
 	{
 		_win?.SetForeground();
 		await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
@@ -102,7 +105,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			.ConfigureAwait(false);
 	}
 
-	internal async ValueTask<IReadOnlyList<string>> GetVoiceNames()
+	internal static async ValueTask<IReadOnlyList<string>> GetVoiceNames()
 	{
 		if(VoiceNames?.Any() == true){ return [.. VoiceNames]; }
 		ComboBox? cb = GetVoiceCombo();
@@ -114,7 +117,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 			cb.Expand();
 		}
 
-		//using var automation = new UIA3Automation();
 		var result = await GetVoiceListAsync().ConfigureAwait(false);
 		foreach (var item in result)
 		{
@@ -133,7 +135,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return VoiceNames ?? [];
 	}
 
-	internal async ValueTask<bool> SetVoiceAsync(string voiceName)
+	internal static async ValueTask<bool> SetVoiceAsync(string voiceName)
 	{
 		if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) { return true; }
 
@@ -146,7 +148,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 			cb.Expand();
 		}
 
-		using var automation = new UIA3Automation();
 		var result = await GetVoiceListAsync().ConfigureAwait(false);
 		var voice = result
 			.FirstOrDefault(v => string.Equals(v.Name, voiceName, StringComparison.Ordinal))
@@ -156,7 +157,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		voice.Focus();
 		voice.Expand();
-		await WinTalkAutoService.SetVoiceInnerAsync(automation).ConfigureAwait(false);
+		await SetVoiceInnerAsync(_automation).ConfigureAwait(false);
 
 		//wait
 		await Task.Run(()=>
@@ -178,7 +179,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return true;
 	}
 
-	internal void SetFocusFirstRow(bool isWithRightClick = false)
+	internal static void SetFocusFirstRow(bool isWithRightClick = false)
 	{
 		var row = GetRow();
 		row.AsGridRow().Focus();
@@ -223,36 +224,42 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return await GetModalMenuItems().ConfigureAwait(false);
 	}
 
-	ComboBox? GetVoiceCombo()
+	static ComboBox? GetVoiceCombo()
 	{
-		return _win?.FindFirstDescendant(
+		if (_voiceCombo is not null) return _voiceCombo;
+		_voiceCombo = _win?.FindFirstDescendant(
 				f => f.ByControlType(ControlType.ComboBox)
 				.And(f.ByHelpText("ボイスを選択"))
 			)
 			.AsComboBox();
+		return _voiceCombo;
 	}
 
-	TextBox? GetTextBox(int col)
+	static TextBox? GetTextBox(int col)
 	{
-		var row = GetRow();
-		var children = row?.FindAllDescendants(
-			f => f.ByControlType(ControlType.Edit)
-		);
-		return children?
+		if (_textBoxes is null)
+		{
+			var row = GetRow();
+			_textBoxes = row?.FindAllDescendants(
+				f => f.ByControlType(ControlType.Edit)
+			);
+		}
+		return _textBoxes?
 			.FirstOrDefault(x => x.AsGridCell().Patterns.GridItem.Pattern.Column == col)
 			.AsTextBox();
 	}
 
-	CheckBox? GetUtteranceEnable()
+	static CheckBox? GetUtteranceEnable()
 	{
+		if (_utteranceCheckBox is not null) return _utteranceCheckBox;
 		var row = GetRow();
-		var target = row?.FindFirstDescendant(
+		_utteranceCheckBox = row?.FindFirstDescendant(
 			f => f.ByControlType(ControlType.CheckBox)
 		).AsCheckBox();
-		return target;
+		return _utteranceCheckBox;
 	}
 
-	internal int GetUtterancePosition(string headerName = "文")
+	internal static int GetUtterancePosition(string headerName = "文")
 	{
 		if(_uPos >= 0){return _uPos;}
 
@@ -266,14 +273,14 @@ public partial class WinTalkAutoService : ITalkAutoService
 	/// </summary>
 	/// <param name="headerName">note: 別言語UIの場合は表記を変える必要がある</param>
 	/// <returns></returns>
-	internal int GetLengthPosition(string headerName = "長さ")
+	internal static int GetLengthPosition(string headerName = "長さ")
 	{
 		if(_lenPos >= 0){return _lenPos;}
 		_lenPos = GetPosition(headerName);
 		return _lenPos;
 	}
 
-	int GetPosition(string headerName)
+	static int GetPosition(string headerName)
 	{
 		var table = GetTable();
 		var hRow = table?
@@ -288,7 +295,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			.i ?? -1;
 	}
 
-	AutomationElement? GetRow()
+	static AutomationElement? GetRow()
 	{
 		if(_row is not null){return _row;}
 		var table = GetTable();
@@ -297,7 +304,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return _row;
 	}
 
-	AutomationElement? GetTable()
+	static AutomationElement? GetTable()
 	{
 		if (_table is not null) return _table;
 

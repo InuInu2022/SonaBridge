@@ -13,8 +13,11 @@ public partial class WinTalkAutoService
 	static ToggleButton? gPanelToggle;
 	static Button? styleBarButton;
 	static Slider[]? gParamSliders;
-	static Slider[]? styleSliders;
+	static readonly Dictionary<string, Slider[]> _styleSliderCache = [];
+	static readonly Dictionary<string, IReadOnlyList<string>> _styleNamesCache = [];
 	static string? lastVoiceName;
+	private static ToggleButton? _globalPanelButton;
+	private static Button? _styleButton;
 	static readonly Dictionary<string,(double max, double min, double, double)> gParam = new(StringComparer.Ordinal)
 	{
 		{"Speed", (5.0, 0.2, 0.048, 0.048)},
@@ -33,13 +36,7 @@ public partial class WinTalkAutoService
 			await GetAppWindowAsync().ConfigureAwait(false);
 			var result = await Task
 				.Run(() => Retry.WhileNull(
-					() => _win?
-						.FindAllDescendants(f =>
-							f.ByName("global parameters")
-							.And(f.ByControlType(ControlType.Button))
-						)
-						.FirstOrDefault()
-						.AsToggleButton(),
+					static () => GetGlobalPanelButton(),
 					timeout: TimeSpan.FromSeconds(3),
 					interval: TimeSpan.FromSeconds(0.1),
 					ignoreException: true
@@ -52,6 +49,8 @@ public partial class WinTalkAutoService
 		if (gPanelToggle.IsToggled is true) return;
 		gPanelToggle.Toggle();
 	}
+
+
 
 	internal async ValueTask<Slider[]> GetGlobalParamSliders()
 	{
@@ -151,13 +150,7 @@ public partial class WinTalkAutoService
 		await GetAppWindowAsync().ConfigureAwait(false);
 		var result = await Task
 			.Run(() => Retry.WhileNull(
-				() => _win?
-					.FindAllDescendants(f =>
-						f.ByName("Bar")
-						.And(f.ByControlType(ControlType.Button))
-					)
-					.FirstOrDefault()
-					.AsButton(),
+				static () => GetStyleButton(),
 				timeout: TimeSpan.FromSeconds(3),
 				interval: TimeSpan.FromSeconds(0.1),
 				ignoreException: true
@@ -167,15 +160,28 @@ public partial class WinTalkAutoService
 		return result.Result;
 	}
 
+	static Button? GetStyleButton()
+	{
+		if (_styleButton is not null) return _styleButton;
+		_styleButton = _win?
+			.FindAllDescendants(f =>
+				f.ByName("Bar")
+				.And(f.ByControlType(ControlType.Button))
+			)
+			.FirstOrDefault()
+			.AsButton();
+		return _styleButton;
+	}
+
 	internal async ValueTask<Slider[]> GetStyleSlidersAsync(
 		string voiceName
 	)
 	{
-		if(styleSliders?.Length > 0
-			&& string.Equals(lastVoiceName, voiceName, StringComparison.Ordinal))
+		if(_styleSliderCache.TryGetValue(voiceName, out var sliders))
 		{
-			return styleSliders;
+			return sliders;
 		}
+
 		await GetAppWindowAsync().ConfigureAwait(false);
 		await OpenGlobalParamsPanelAsync().ConfigureAwait(false);
 		await SetStyleBarTabEnabledAsync().ConfigureAwait(false);
@@ -196,13 +202,14 @@ public partial class WinTalkAutoService
 					return sliders is [] ? null : sliders;
 				},
 				timeout: TimeSpan.FromSeconds(3),
-				interval: TimeSpan.FromSeconds(0.1),
+				interval: TimeSpan.FromSeconds(0.05),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
 		if (!result.Success) return [];
-		styleSliders = result.Result ?? [];
-		return styleSliders;
+		var foundSliders = result.Result ?? [];
+		_styleSliderCache.Add(voiceName, foundSliders);
+		return foundSliders;
 	}
 
 	// 0.75 sec.
@@ -211,7 +218,7 @@ public partial class WinTalkAutoService
 	{
 		var sliders = await GetStyleSlidersAsync(voiceName)
 			.ConfigureAwait(false);
-		var names = await GetCurrentStyleNamesAsync()
+		var names = await GetCurrentStyleNamesAsync(voiceName)
 			.ConfigureAwait(false);
 		var dic = sliders
 			.Zip(names, (slider, name) => (name, slider.Value))
@@ -221,14 +228,17 @@ public partial class WinTalkAutoService
 
 	//time: 0.7588927 sec.
 	internal async ValueTask<IReadOnlyList<string>>
-	GetCurrentStyleNamesAsync()
+	GetCurrentStyleNamesAsync(string voiceName)
 	{
+		if(_styleNamesCache.TryGetValue(voiceName, out var names)){
+			return names;
+		}
 		styleBarButton ??= await GetStyleBarButton().ConfigureAwait(false);
 		var group = styleBarButton?.Parent;
-		using var automation = new UIA3Automation();
-		var walker = automation.TreeWalkerFactory.GetRawViewWalker();
+		var walker = _automation.TreeWalkerFactory.GetRawViewWalker();
 		walker.GetNextSibling(group);
 
+		//TODO: 通常loop化
 		AutomationElement? lastElem = group;
 		await Task
 			.Run(() => Retry.WhileFalse(
@@ -239,14 +249,15 @@ public partial class WinTalkAutoService
 					lastElem = elem;
 					return isText;
 				},
-				timeout: TimeSpan.FromSeconds(3),
-				interval: TimeSpan.FromSeconds(0.1),
+				timeout: TimeSpan.FromSeconds(1),
+				interval: TimeSpan.FromSeconds(0.001),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
 
 		AutomationElement? lastText = lastElem.AsTextBox();
 		List<TextBox> textBoxes = [lastText.AsTextBox()];
+		//TODO: 通常loop化
 		await Task
 			.Run(() => Retry.WhileTrue(
 				() =>
@@ -259,12 +270,14 @@ public partial class WinTalkAutoService
 					}
 					return isText;
 				},
-				timeout: TimeSpan.FromSeconds(3),
-				interval: TimeSpan.FromSeconds(0.1),
+				timeout: TimeSpan.FromSeconds(1),
+				interval: TimeSpan.FromSeconds(0.001),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
-		return textBoxes.ConvertAll(t => t.Text);
+		var foundNames = textBoxes.ConvertAll(t => t.Text);
+		_styleNamesCache.Add(voiceName, foundNames);
+		return foundNames;
 	}
 
 	// 1.4 sec.
@@ -274,7 +287,7 @@ public partial class WinTalkAutoService
 		SetFocusFirstRow();
 		var sliders = await GetStyleSlidersAsync(voiceName)
 			.ConfigureAwait(false);
-		var names = await GetCurrentStyleNamesAsync()
+		var names = await GetCurrentStyleNamesAsync(voiceName)
 			.ConfigureAwait(false);
 		foreach (var item in styles)
 		{
@@ -292,6 +305,19 @@ public partial class WinTalkAutoService
 			await p.WaitUntilEnabledAsync()
 				.ConfigureAwait(false);
 		}
+	}
+
+	static ToggleButton? GetGlobalPanelButton()
+	{
+		if (_globalPanelButton is not null) return _globalPanelButton;
+		_globalPanelButton = _win?
+			.FindAllDescendants(f =>
+				f.ByName("global parameters")
+				.And(f.ByControlType(ControlType.Button))
+			)
+			.FirstOrDefault()
+			.AsToggleButton();
+		return _globalPanelButton;
 	}
 
 	static Slider? FindGParamSlider(Slider[] sliders, (double max, double min, double smallChange, double largeChange) search)
