@@ -40,7 +40,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var service = new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		await _service.PlayUtterance();
+		await WinTalkAutoService.PlayUtterance();
 	}
 
 	[Theory]
@@ -49,7 +49,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var service = new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		var result = _service.GetUtterancePosition();
+		var result = WinTalkAutoService.GetUtterancePosition();
 
 		Assert.Equal(index, result);
 	}
@@ -59,7 +59,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var service = new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		var result = _service.GetLengthPosition();
+		var result = WinTalkAutoService.GetLengthPosition();
 
 		Assert.Equal(index, result);
 	}
@@ -70,7 +70,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		await _service.SetUtterance(text);
+		await WinTalkAutoService.SetUtterance(text);
 	}
 
 	[Theory]
@@ -82,8 +82,8 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		await _service.SetUtterance(text);
-		await _service.PlayUtterance();
+		await WinTalkAutoService.SetUtterance(text);
+		await WinTalkAutoService.PlayUtterance();
 
 		await Task.Delay(1000);
 	}
@@ -93,7 +93,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		var items = await _service.GetVoiceNames();
+		var items = await WinTalkAutoService.GetVoiceNames();
 
 		items.ToList().ForEach(v => _output.WriteLine($"voice: {v}") );
 
@@ -110,10 +110,10 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
-		var result = await _service.SetVoiceAsync(name);
+		var result = await WinTalkAutoService.SetVoiceAsync(name);
 
 		result.Should().Be(expected);
-		await _service.PlayUtterance();
+		await WinTalkAutoService.PlayUtterance();
 	}
 
 	[Fact]

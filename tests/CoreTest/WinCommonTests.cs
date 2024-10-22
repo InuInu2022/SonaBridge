@@ -23,7 +23,7 @@ public class WinCommonTests(ITestOutputHelper output)
 	{
 		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
-		await service.SetUtterance(text);
+		await WinTalkAutoService.SetUtterance(text);
 
 		var path = Path.Combine(
 			Path.GetTempPath(),
@@ -53,9 +53,9 @@ public class WinCommonTests(ITestOutputHelper output)
 	{
 		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
-		await service.SetUtterance("あいうえお");
-		service.SetFocusFirstRow(true);
-		var win = service.TopWindow;
+		await WinTalkAutoService.SetUtterance("あいうえお");
+		WinTalkAutoService.SetFocusFirstRow(true);
+		var win = WinTalkAutoService.TopWindow;
 		win?.SetForeground();
 
 		var menus = GetMenuItems(win);
