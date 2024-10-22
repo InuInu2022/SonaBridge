@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 using FlaUI.Core.AutomationElements;
 
 using FluentAssertions;
@@ -9,12 +11,14 @@ using Xunit.Abstractions;
 
 namespace CoreTest;
 
-public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
+public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, IAsyncLifetime
 {
 	private readonly ServiceFixture _fixture;
 	private readonly WinTalkAutoService _service;
 	private readonly ITestOutputHelper _output;
 	private bool _disposedValue;
+
+	private readonly Stopwatch _sw;
 
 	public WinAutoServiceTests(
 		ServiceFixture fixture,
@@ -24,14 +28,27 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 		_fixture = fixture;
 		_service = new WinTalkAutoService();
 		_output = output;
+		_sw = new Stopwatch();
 	}
 
+	public Task InitializeAsync()
+	{
+		return Task.CompletedTask;
+	}
+
+	public Task DisposeAsync()
+	{
+		_sw.Stop();
+		_output.WriteLine($"------ {_sw.ElapsedMilliseconds} ms. ------");
+		_sw.Reset();
+		return Task.CompletedTask;
+	}
 
 
 	[Fact]
 	public async Task GetAppAsync()
 	{
-		//var service = new WinTalkAutoService();
+		_sw.Start();
 		await _service.GetAppWindowAsync();
 	}
 
@@ -370,4 +387,6 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable
 		Dispose(disposing: true);
 		GC.SuppressFinalize(this);
 	}
+
+
 }
