@@ -57,6 +57,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	{
 		//var service = new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
+		_sw.Start();
 		await WinTalkAutoService.PlayUtterance();
 	}
 
@@ -66,6 +67,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	{
 		//var service = new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
+		_sw.Start();
 		var result = WinTalkAutoService.GetUtterancePosition();
 
 		Assert.Equal(index, result);
@@ -87,6 +89,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
+		_sw.Start();
 		await WinTalkAutoService.SetUtterance(text);
 	}
 
@@ -224,35 +227,37 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	public async void OpenGlobalParamsPanel()
 	{
 		//var _service.= new WinTalkAutoService();
-		var sw = System.Diagnostics.Stopwatch.StartNew();
+		//var sw = System.Diagnostics.Stopwatch.StartNew();
+		_sw.Start();
 
 		await _service.OpenGlobalParamsPanelAsync();
 
-		sw.Stop();
-		_output.WriteLine($"1 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
-		sw.Restart();
+		_sw.Stop();
+		_output.WriteLine($"1 toggle gparam. time: {_sw.Elapsed.TotalMilliseconds} ms.");
+		_sw.Restart();
 
 		await _service.OpenGlobalParamsPanelAsync();
 
-		sw.Stop();
-		_output.WriteLine($"2 toggle gparam. time: {sw.Elapsed.TotalSeconds} sec.");
+		_sw.Stop();
+		_output.WriteLine($"2 toggle gparam. time: {_sw.Elapsed.TotalMilliseconds} sec.");
 	}
 
 	[Fact]
 	public async void GetGlobalParamSliders()
 	{
 		//var _service.= new WinTalkAutoService();
-		var sw = System.Diagnostics.Stopwatch.StartNew();
+		//var sw = System.Diagnostics.Stopwatch.StartNew();
+		_sw.Start();
 
 		var sliders = await _service.GetGlobalParamSliders();
 
-		sw.Stop();
+		_sw.Stop();
 		foreach(var s in sliders)
 		{
 			var s2 = s.AsSlider();
 			_output.WriteLine($"Slider: {s2.Value}, max:{s2.Maximum} min:{s2.Minimum}");
 		}
-		_output.WriteLine($"get sliders. time: {sw.Elapsed.TotalSeconds} sec.");
+		_output.WriteLine($"get sliders. time: {_sw.Elapsed.TotalMilliseconds} ms.");
 
 		var values = await _service.GetCurrentGlobalParamAsync();
 		foreach (var item in values)
@@ -284,7 +289,8 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 		bool expect = true)
 	{
 		//var _service.= new WinTalkAutoService();
-		var sw = System.Diagnostics.Stopwatch.StartNew();
+		//var sw = System.Diagnostics.Stopwatch.StartNew();
+		_sw.Start();
 
 		await _service.SetCurrentGlobalParamsAsync(
 			new Dictionary<string,double>(StringComparer.Ordinal){
@@ -292,8 +298,8 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 			});
 
 		var values = await _service.GetCurrentGlobalParamAsync();
-		sw.Stop();
-		_output.WriteLine($"SetGlobalParamSingle time: {sw.Elapsed.TotalSeconds} sec.");
+		_sw.Stop();
+		_output.WriteLine($"SetGlobalParamSingle time: {_sw.Elapsed.TotalMilliseconds} ms.");
 		values.TryGetValue(key, out var found)
 			.Should().Be(hasKey);
 		var isSame = Math.Abs(found - value) < 0.01;
@@ -302,39 +308,41 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 
 	[Theory]
 	[InlineData("Tanaka San")]
-
+	[InlineData("Takahashi")]
 	public async void GetStyleSliders(string voice)
 	{
 		//var _service.= new WinTalkAutoService();
-		var sw = System.Diagnostics.Stopwatch.StartNew();
+		//var sw = System.Diagnostics.Stopwatch.StartNew();
+		await _service.SetCastAsync(voice);
+		_sw.Start();
 
 		var sliders = await _service.GetStyleSlidersAsync(voice);
 
-		sw.Stop();
+		_sw.Stop();
 		foreach(var s in sliders)
 		{
 			var s2 = s.AsSlider();
 			_output.WriteLine($"Slider: {s2.Value}, max:{s2.Maximum} min:{s2.Minimum}");
 		}
-		_output.WriteLine($"get sliders. time: {sw.Elapsed.TotalSeconds} sec.");
+		_output.WriteLine($"get sliders. time: {_sw.Elapsed.TotalMilliseconds} ms.");
 
-		sw.Restart();
-		var names = await _service.GetCurrentStyleNamesAsync();
-		sw.Stop();
+		_sw.Restart();
+		var names = await _service.GetCurrentStyleNamesAsync(voice);
+		_sw.Stop();
 		foreach (var item in names)
 		{
 			_output.WriteLine($"Style name: {item} ");
 		}
-		_output.WriteLine($"get style names time: {sw.Elapsed.TotalSeconds} sec.");
+		_output.WriteLine($"get style names time: {_sw.Elapsed.TotalMilliseconds} ms.");
 
-		sw.Restart();
+		_sw.Restart();
 		var values = await _service.GetCurrentStylesAsync(voice);
-		sw.Stop();
+		_sw.Stop();
 		foreach (var item in values)
 		{
 			_output.WriteLine($"Value: {item.Key}, {item.Value:F2} ");
 		}
-		_output.WriteLine($"get style time: {sw.Elapsed.TotalSeconds} sec.");
+		_output.WriteLine($"get style time: {_sw.Elapsed.TotalMilliseconds} ms.");
 
 	}
 
