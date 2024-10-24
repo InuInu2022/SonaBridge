@@ -7,10 +7,6 @@ namespace SonaBridge.Core.Win;
 
 public partial class WinTalkAutoService : ITalkAutoService
 {
-	public WinTalkAutoService()
-	{
-	}
-
 	/// <inheritdoc/>
 	public async Task<bool> SpeakAsync(
 		string text,
