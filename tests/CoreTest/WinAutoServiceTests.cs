@@ -130,7 +130,9 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
+		_sw.Start();
 		var result = await WinTalkAutoService.SetVoiceAsync(name);
+		_sw.Stop();
 
 		result.Should().Be(expected);
 		await WinTalkAutoService.PlayUtterance();
