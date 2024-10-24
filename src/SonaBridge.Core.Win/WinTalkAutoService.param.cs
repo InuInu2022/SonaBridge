@@ -114,6 +114,7 @@ public partial class WinTalkAutoService
 		IDictionary<string, double> globalParams
 	)
 	{
+		//TODO: tune
 		var sliders = await GetGlobalParamSliders()
 			.ConfigureAwait(false);
 		foreach (var item in globalParams)
