@@ -7,6 +7,17 @@ namespace SonaBridge.Core.Win;
 
 public partial class WinTalkAutoService : ITalkAutoService
 {
+	public async Task StartAsync()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		_win?.SetForeground();
+		await _win.WaitUntilEnabledAsync()
+			.ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+		await PrepareAppAsync().ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+	}
+
 	/// <inheritdoc/>
 	public async Task<bool> SpeakAsync(
 		string text,
@@ -103,4 +114,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await SetCurrentStylesAsync(voiceName, styles).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 	}
+
+
 }

@@ -1,9 +1,11 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.Globalization;
 
 using FlaUI.Core;
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
+using FlaUI.Core.Identifiers;
 using FlaUI.Core.Input;
 using FlaUI.Core.Tools;
 using FlaUI.Core.WindowsAPI;
@@ -27,16 +29,106 @@ public partial class WinTalkAutoService : ITalkAutoService
 	private static ComboBox? _voiceCombo;
 	private static CheckBox? _utteranceCheckBox;
 	private static AutomationElement[]? _textBoxes;
+	private static CacheRequest? _topWindowCacheRequest;
 	private static readonly UIA3Automation _automation = new();
 
 	private static IReadOnlyList<string>? VoiceNames { get; set; }
 
 	internal static Window? TopWindow { get => _win; }
 
+	public WinTalkAutoService()
+	{
+		/*
+		_topWindowCacheRequest = new CacheRequest
+		{
+			TreeScope = TreeScope.Element,
+		};
+		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.Name);
+		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.AutomationId);
+		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.ControlType);
+		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.HelpText);
+		*/
+	}
+
+	/// <summary>
+	/// 事前に設定しておく
+	///  - ボイス切替の高速化のためすべてのボイスのトラックを用意しておく
+	/// </summary>
+	/// <returns></returns>
+	/// <param name="progress">処理の進捗数通知用</param>
+	internal async ValueTask PrepareAppAsync(IProgress<int>? progress = null)
+	{
+		int p = 0;
+		progress?.Report(++p);
+
+		await GetAppWindowAsync().ConfigureAwait(false);
+		_win?.SetForeground();
+		_win?.FocusNative();
+		progress?.Report(++p);
+
+		//ボイス一覧取得
+		var voices = await GetVoiceNames().ConfigureAwait(false);
+		progress?.Report(++p);
+
+		//ボイス数分トラックを複製
+		var trackBtn = _win?
+			.FindFirstDescendant(f => f.ByName("TrackPanel::Button"))
+			.AsButton();
+		for (int i = 0; i < voices.Count; i++)
+		{
+			await trackBtn.WaitUntilClickableAsync().ConfigureAwait(false);
+			trackBtn?.Invoke();
+			progress?.Report(++p);
+		}
+		//ボイスをそれぞれ割り当てておく（一度割り当ててあるとボイス切り替えが高速になる）
+		var track = _win?
+			.FindFirstChild(f => f.ByControlType(ControlType.List)).AsListBox();
+		var gridPattern = track?.Patterns.Grid.Pattern;
+
+		for (int i = 0; i < voices.Count; i++)
+		{
+			var item = gridPattern?.GetItem(i + 1, 0).AsListBoxItem();
+			item?.ScrollIntoView();
+			await item.WaitUntilClickableAsync()
+				.ConfigureAwait(false);
+
+			var cb = item?.FindFirstChild(f => f.ByControlType(ControlType.ComboBox)).AsComboBox();
+			if (cb is null) continue;
+
+			var _ = await SetVoiceCoreAsync(voices[i], cb).ConfigureAwait(false);
+
+			await cb.WaitUntilClickableAsync()
+				.ConfigureAwait(false);
+
+			progress?.Report(++p);
+		}
+		for (int i = voices.Count - 2; i > 0; i--)
+		{
+			var item = gridPattern?.GetItem(i, 0).AsListBoxItem();
+			item?.ScrollIntoView();
+			await item.WaitUntilClickableAsync()
+				.ConfigureAwait(false);
+		}
+		var f1 = gridPattern?.GetItem(0, 0).AsListBoxItem();
+		f1?.ScrollIntoView();
+		f1?.FocusNative();
+		await f1.WaitUntilClickableAsync()
+			.ConfigureAwait(false);
+
+		//Reset
+		_voiceCombo = null;
+
+		await Task.Delay(100).ConfigureAwait(false);
+	}
+
+
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
-		_win ??= _app?.GetAllTopLevelWindows(_automation)[0];
+		//using (_topWindowCacheRequest?.Activate())
+		//{
+			_win ??= _app?.GetAllTopLevelWindows(_automation)[0];
+		//}
 	}
 
 	internal static async ValueTask PlayUtterance(
@@ -79,6 +171,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		_win?.SetForeground();
 		await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
+
+		//using var _ = _topWindowCacheRequest?.Activate();
 		var col = GetUtterancePosition();
 		var edit = GetTextBox(col);
 
@@ -141,6 +235,58 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		ComboBox? cb = GetVoiceCombo();
 
+		return await SetVoiceCoreAsync(voiceName, cb).ConfigureAwait(false);
+	}
+
+	static async ValueTask<bool> SetVoiceCoreAsync(string voiceName, ComboBox? cb)
+	{
+		if (cb is null) return false;
+
+		await cb.WaitUntilEnabledAsync()
+			.ConfigureAwait(false);
+
+		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		{
+			cb.Expand();
+		}
+
+		var result = await GetVoiceListAsync().ConfigureAwait(false);
+		var voice = result
+			.FirstOrDefault(v => string.Equals(v.Name, voiceName, StringComparison.Ordinal))
+			.AsMenuItem()
+			;
+		if (voice is null) return false;
+
+		voice.Focus();
+		voice.Expand();
+		await SetVoiceInnerAsync(_automation).ConfigureAwait(false);
+
+		//wait
+		await Task.Run(() =>
+			Retry.WhileTrue(() =>
+			{
+				cb.WaitUntilClickable();
+				var isOffScr = _win?.AsWindow().IsOffscreen ?? true;
+
+				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
+			},
+			TimeSpan.FromSeconds(10),
+			TimeSpan.FromMilliseconds(75))
+		).ConfigureAwait(false);
+		await Task.Delay(50).ConfigureAwait(false); //安全策
+
+		Console.WriteLine($"last:{_lastVoiceName}, set:{voiceName}");
+		_lastVoiceName = voiceName;
+
+		return true;
+	}
+
+	internal static async ValueTask<bool> SetVoiceAsync2(string voiceName)
+	{
+		if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) { return true; }
+
+		ComboBox? cb = GetVoiceCombo();
+
 		if (cb is null) return false;
 
 		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
@@ -169,11 +315,14 @@ public partial class WinTalkAutoService : ITalkAutoService
 				return isOffScr && !_win!.IsAvailable && !_win!.IsEnabled;
 			},
 			TimeSpan.FromSeconds(10),
-			TimeSpan.FromMilliseconds(100))
+			TimeSpan.FromMilliseconds(75))
 		).ConfigureAwait(false);
-		await Task.Delay(50).ConfigureAwait(false);	//安全策
+		await Task.Delay(50).ConfigureAwait(false); //安全策
 
-		Console.WriteLine($"last:{_lastVoiceName}, set:{voiceName}");
+		//await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
+		//Wait.UntilResponsive(_win);
+
+		//Console.WriteLine($"last:{_lastVoiceName}, set:{voiceName}");
 		_lastVoiceName = voiceName;
 
 		return true;
@@ -307,11 +456,13 @@ public partial class WinTalkAutoService : ITalkAutoService
 	static AutomationElement? GetTable()
 	{
 		if (_table is not null) return _table;
-
-		_table = _win?
-			.FindFirstChild(f => f
-				.ByControlType(ControlType.Table))
-			?? default;
+		using (_topWindowCacheRequest?.Activate())
+		{
+			_table = _win?
+				.FindFirstChild(f => f
+					.ByControlType(ControlType.Table))
+				?? default;
+		}
 		return _table;
 	}
 

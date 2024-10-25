@@ -9,6 +9,11 @@ public class MacTalkAutoService : ITalkAutoService
 {
 	private bool _disposedValue;
 
+	public Task StartAsync()
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<string[]> GetAvailableCastsAsync()
 	{
 		throw new NotSupportedException();
@@ -82,4 +87,6 @@ public class MacTalkAutoService : ITalkAutoService
 		Dispose(disposing: true);
 		GC.SuppressFinalize(this);
 	}
+
+
 }

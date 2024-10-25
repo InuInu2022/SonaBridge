@@ -6,6 +6,12 @@ namespace SonaBridge.Core.Common;
 public partial interface ITalkAutoService : IAutoService
 {
 	/// <summary>
+	/// 非同期で起動
+	/// </summary>
+	/// <returns></returns>
+	Task StartAsync();
+
+	/// <summary>
 	/// 現在のキャストのグローバルパラメータ一覧を取得します。
 	/// </summary>
 	/// <returns></returns>
