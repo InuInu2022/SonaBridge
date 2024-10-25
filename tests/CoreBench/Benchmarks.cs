@@ -6,8 +6,11 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Diagnostics.Windows.Configs;
 using BenchmarkDotNet.Engines;
 
+using FlaUI.Core.AutomationElements;
+
 using SonaBridge;
 using SonaBridge.Core.Common;
+using SonaBridge.Core.Win;
 
 namespace CoreBench;
 
@@ -59,16 +62,17 @@ public class Benchmarks : IDisposable
 		service?.Dispose();
     }
 
-	//[Params("短い文章", "あめんぼ甘いな、あいうえお。これは長い文章です。")]
-	//public string SpeakText { get; set; } = "";
+	#region Standard
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task SpeakSingleAsync()
 	{
 		await service!.SpeakAsync("あ").ConfigureAwait(false);
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task SpeakRandomVoiceAsync()
 	{
 		await service!.SetCastAsync(RandomVoiceName)
@@ -78,6 +82,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task GetAvailableCastsAsync()
 	{
 		await service!.GetAvailableCastsAsync()
@@ -85,6 +90,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task SetCastAsync()
 	{
 		await service!.SetCastAsync(RandomVoiceName)
@@ -92,6 +98,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task OutputWaveToFileSingleAsync()
 	{
 		await service!
@@ -103,6 +110,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task OutputWaveToFileRandomAsync()
 	{
 		await service!.SetCastAsync(RandomVoiceName)
@@ -116,6 +124,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task GetGlobalParamsAsync()
 	{
 		await service!
@@ -124,6 +133,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task SetGlobalParamsAsync()
 	{
 		await service!
@@ -134,6 +144,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task GetStylesAsync()
 	{
 		await service!
@@ -142,6 +153,7 @@ public class Benchmarks : IDisposable
 	}
 
 	[Benchmark]
+	[BenchmarkCategory("Standard")]
 	public async Task SetStylesAsync()
 	{
 		await service!
@@ -153,6 +165,51 @@ public class Benchmarks : IDisposable
 			)
 			.ConfigureAwait(false);
 	}
+
+	#endregion Standard
+
+	#region SetCast
+
+	[Benchmark(Baseline = true)]
+	[BenchmarkCategory("SetCast")]
+	public async Task SetCastCacheNone()
+	{
+		if (service is not WinTalkAutoService wService) return;
+		await wService.GetAppWindowAsync()
+			.ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+		var result = await WinTalkAutoService
+			.SetVoiceAsync(RandomVoiceName)
+			.ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync()
+			.ConfigureAwait(false);
+		if(!result){
+			throw new InvalidOperationException("FlaUI operation error!");
+		}
+	}
+
+	[Benchmark]
+	[BenchmarkCategory("SetCast")]
+	public async Task SetCastCacheWith()
+	{
+		if (service is not WinTalkAutoService wService) return;
+		await wService.GetAppWindowAsync()
+			.ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+
+		var result = await WinTalkAutoService
+			.SetVoiceAsync2(RandomVoiceName)
+			.ConfigureAwait(false);
+
+		await WinCommon.RestoreMousePointAsync()
+			.ConfigureAwait(false);
+		if(!result)
+		{
+			throw new InvalidOperationException("FlaUI operation error!");
+		}
+	}
+
+	#endregion SetCast
 
 
 	///////////////////////////////////////////////////////////////////////////////////

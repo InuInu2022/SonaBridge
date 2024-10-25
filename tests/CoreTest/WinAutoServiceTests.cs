@@ -380,6 +380,20 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 		isSame.Should().Be(expect);
 	}
 
+	[Fact]
+	public async void PrepareAppAsync()
+	{
+		var progress = new Progress<int>(value => _output.WriteLine($"progress {value}/n?"));
+		_sw.Start();
+		await _service.PrepareAppAsync(progress);
+		_sw.Stop();
+
+		await _service.SetCastAsync("Takahashi");
+
+	}
+
+
+
 	protected virtual void Dispose(bool disposing)
 	{
 		if (!_disposedValue)
