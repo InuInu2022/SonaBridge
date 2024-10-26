@@ -37,4 +37,19 @@ public partial interface ITalkAutoService : IAutoService
 	/// <param name="voiceName">ボイスライブラリ名</param>
 	/// <param name="styles">スタイル名と値。値はUIと同じものを渡してください。範囲外の値は丸められます。</param>
 	ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles);
+
+	/// <summary>
+	/// 指定したボイスライブラリのプリセット名のリストを取得します
+	/// </summary>
+	/// <param name="voiceName"></param>
+	/// <returns></returns>
+	ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName);
+
+	/// <summary>
+	/// 指定したボイスライブラリのプリセットを指定します
+	/// </summary>
+	/// <param name="voiceName"></param>
+	/// <param name="presetName"></param>
+	/// <returns></returns>
+	ValueTask SetPresetsAsync(string voiceName, string presetName);
 }

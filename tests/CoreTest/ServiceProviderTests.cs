@@ -87,5 +87,22 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 		result.Should().BeTrue();
 	}
 
+	[Theory]
+	[InlineData("Takahashi")]
+	[InlineData("Sato Sasara")]
+	[InlineData("Tanaka San")]
+	public async void Presets(string voice)
+	{
+		_sw.Restart();
+		var result = await _service.GetPresetsAsync(voice);
+		_sw.Stop();
+		_output.WriteLine($"{voice}\n - { string.Join(',', result) }");
+		_output.WriteLine($"{_sw.ElapsedMilliseconds} ms");
+		_sw.Restart();
+		await _service.SetPresetsAsync(voice, result[0]);
+		_sw.Stop();
+		_output.WriteLine($"{_sw.ElapsedMilliseconds} ms");
+	}
+
 
 }

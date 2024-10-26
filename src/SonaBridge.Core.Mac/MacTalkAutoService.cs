@@ -59,6 +59,16 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
+	{
+		throw new NotSupportedException();
+	}
+
+	public ValueTask SetPresetsAsync(string voiceName, string presetName)
+	{
+		throw new NotSupportedException();
+	}
+
 	protected virtual void Dispose(bool disposing)
 	{
 		if (!_disposedValue)
@@ -87,6 +97,4 @@ public class MacTalkAutoService : ITalkAutoService
 		Dispose(disposing: true);
 		GC.SuppressFinalize(this);
 	}
-
-
 }

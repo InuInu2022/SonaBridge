@@ -392,7 +392,33 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 
 	}
 
+	[Theory]
+	[InlineData("Takahashi")]
+	public async void GetCurrentPresets(string voice)
+	{
+		await _service.SetCastAsync(voice);
+		_sw.Start();
+		var result = await _service.GetCurrentPresets();
+		_sw.Stop();
 
+		foreach (var item in result)
+		{
+			_output.WriteLine($"- Preset: {item}");
+		}
+
+		result.Should().NotBeEmpty();
+	}
+
+	[Theory]
+	[InlineData("Takahashi","テストB")]
+	public async void SetPresetsAsync(string voice, string presets)
+	{
+		await _service.SetCastAsync(voice);
+		_sw.Start();
+		await WinTalkAutoService.SetCurrentPreset(presets);
+		_sw.Stop();
+
+	}
 
 	protected virtual void Dispose(bool disposing)
 	{

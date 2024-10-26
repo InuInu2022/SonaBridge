@@ -115,5 +115,17 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 	}
 
+	public async ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await SetCastAsync(voiceName).ConfigureAwait(false);
+		return await GetCurrentPresets().ConfigureAwait(false);
+	}
 
+	public async ValueTask SetPresetsAsync(string voiceName, string presetName)
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await SetCastAsync(voiceName).ConfigureAwait(false);
+		await WinTalkAutoService.SetCurrentPreset(presetName).ConfigureAwait(false);
+	}
 }

@@ -28,7 +28,7 @@ public partial class WinTalkAutoService
 					return ms is [] or null ? null : ms;
 				},
 				timeout: TimeSpan.FromSeconds(3),
-				interval: TimeSpan.FromSeconds(0.1),
+				interval: TimeSpan.FromSeconds(0.05),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);

@@ -146,6 +146,76 @@ public partial class WinTalkAutoService
 		await styleBarButton!.WaitUntilEnabledAsync().ConfigureAwait(false);
 	}
 
+	internal async ValueTask<IReadOnlyList<string>>
+	GetCurrentPresets()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		await OpenGlobalParamsPanelAsync().ConfigureAwait(false);
+
+		var cb = await GetPresetComboAsync().ConfigureAwait(false);
+		if (cb is null) return [];
+
+		if(cb.ExpandCollapseState != ExpandCollapseState.Expanded)
+		{
+			WinCommon.ShowWindow(_win);
+			cb.Expand();
+		}
+		//await cb.WaitUntilEnabledAsync().ConfigureAwait(false);
+		var items = await GetModalMenuItems().ConfigureAwait(false);
+
+		var list = items
+			.Select(item => item.Name)
+			.SkipLast(1)
+			.ToArray();
+		WinCommon.SaveMousePoint();
+		cb.Click();
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+		return [.. list];
+	}
+
+	internal static async ValueTask SetCurrentPreset(string presetName)
+	{
+		var cb = await GetPresetComboAsync().ConfigureAwait(false);
+		if (cb is null) return;
+
+		if(cb.ExpandCollapseState != ExpandCollapseState.Expanded)
+		{
+			WinCommon.ShowWindow(_win);
+			cb.Expand();
+		}
+		//await cb.WaitUntilEnabledAsync().ConfigureAwait(false);
+		var items = await GetModalMenuItems().ConfigureAwait(false);
+		var mItem = items
+			.FirstOrDefault(item => string.Equals(item.Name, presetName, StringComparison.Ordinal))
+			.AsMenuItem();
+		mItem?.Invoke();
+	}
+
+	static async ValueTask<ComboBox?>
+	GetPresetComboAsync(string helpText = "プリセット")
+	{
+		var result = await Task
+			.Run(() => Retry.WhileNull(
+				() =>
+				{
+					return _win?
+						.FindFirstDescendant(f =>
+							f.ByFrameworkId("JUCE")
+							.And(f.ByControlType(ControlType.ComboBox))
+							.And(f.ByHelpText(helpText))
+						)
+						.AsComboBox();
+				},
+				timeout: TimeSpan.FromSeconds(3),
+				interval: TimeSpan.FromMilliseconds(50),
+				ignoreException: true
+			))
+			.ConfigureAwait(false);
+		if (!result.Success || result.Result is null){ return default;}
+
+		return result.Result;
+	}
+
 	async ValueTask<Button?> GetStyleBarButton()
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
