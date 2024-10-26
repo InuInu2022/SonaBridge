@@ -137,7 +137,7 @@ public class Benchmarks : IDisposable
 	public async Task SetGlobalParamsAsync()
 	{
 		await service!
-			.SetGlobalParamsAsync(new Dictionary<string , double>(){
+			.SetGlobalParamsAsync(new Dictionary<string , double>(StringComparer.Ordinal){
 				{"Pitch",1.0}
 			})
 			.ConfigureAwait(false);
@@ -159,7 +159,7 @@ public class Benchmarks : IDisposable
 		await service!
 			.SetStylesAsync(
 				RandomVoiceName,
-				new Dictionary<string, double>(){
+				new Dictionary<string, double>(StringComparer.Ordinal){
 					{"Normal",0.5}
 				}
 			)
