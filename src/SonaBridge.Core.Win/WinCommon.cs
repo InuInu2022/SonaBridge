@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 using FlaUI.Core.AutomationElements;
 using FlaUI.Core.Definitions;
 using FlaUI.Core.Input;
@@ -7,6 +9,20 @@ namespace SonaBridge.Core.Win;
 
 public sealed partial class WinCommon
 {
+	#region ShowWindow
+	private const int SW_RESTORE = 9;
+
+	[DllImport("user32.dll")]
+	internal static extern bool IsIconic(IntPtr handle);
+
+	[DllImport("user32.dll")]
+	internal static extern bool ShowWindow(IntPtr handle, int nCmdShow);
+
+	[DllImport("user32.dll")]
+	internal static extern int SetForegroundWindow(IntPtr handle);
+
+	#endregion ShowWindow
+
 	internal static async ValueTask SaveWavFileAsync(
 		Window window,
 		string pathAndFileName,
@@ -72,5 +88,16 @@ public sealed partial class WinCommon
 	{
 		await Task.Run(()=>Wait.UntilInputIsProcessed(TimeSpan.FromSeconds(timeoutSec)))
 			.ConfigureAwait(false);
+	}
+
+	public static void ShowWindow(Window? window)
+	{
+		if (window is null) return;
+		IntPtr handle = window.Properties.NativeWindowHandle.Value;
+		if (IsIconic(handle))
+		{
+			ShowWindow(handle, SW_RESTORE);
+		}
+		var _ = SetForegroundWindow(handle);
 	}
 }

@@ -155,7 +155,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 					)
 					.AsButton(),
 			TimeSpan.FromSeconds(3),
-			TimeSpan.FromMilliseconds(100))
+			TimeSpan.FromMilliseconds(50))
 		).ConfigureAwait(false);
 
 		//playBtn?.FocusNative();
@@ -169,8 +169,12 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal static async ValueTask SetUtterance(string text = "")
 	{
-		_win?.SetForeground();
-		await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
+		//Wait.UntilResponsive(_win);
+		WinCommon.ShowWindow(_win);
+		//_win?.Focus();
+		//_win?.SetForeground();
+		//SetFocusFirstRow();
+		//await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
 
 		//using var _ = _topWindowCacheRequest?.Activate();
 		var col = GetUtterancePosition();
@@ -178,25 +182,23 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (edit is null) return;
 		edit.FocusNative();
-		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(5))
+		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(3))
 			.ConfigureAwait(false);
 		edit.Text = text;
-		//edit.Enter(text);
-		Keyboard.Press(VirtualKeyShort.RETURN);
 
 		var checkbox = await Task.Run(()=>{
 			var result = Retry
 				.WhileNull(
 					() => GetUtteranceEnable(),
 					TimeSpan.FromSeconds(3),
-					TimeSpan.FromMilliseconds(100),
+					TimeSpan.FromMilliseconds(10),
 					ignoreException:true
 				);
 			return result.Result;
 		}).ConfigureAwait(false);
-		await checkbox
-			.WaitUntilEnabledAsync(TimeSpan.FromSeconds(5))
-			.ConfigureAwait(false);
+		//await checkbox
+		//	.WaitUntilEnabledAsync(TimeSpan.FromSeconds(1))
+		//	.ConfigureAwait(false);
 	}
 
 	internal static async ValueTask<IReadOnlyList<string>> GetVoiceNames()
@@ -222,7 +224,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Collapsed))
 		{
-			cb.Click();
+			WinCommon.ShowWindow(_win);
+			cb.Collapse();
 		}
 		await cb.WaitUntilClickableAsync().ConfigureAwait(false);
 
