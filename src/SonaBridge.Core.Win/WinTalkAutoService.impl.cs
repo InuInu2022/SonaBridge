@@ -181,10 +181,13 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var edit = GetTextBox(col);
 
 		if (edit is null) return;
-		edit.FocusNative();
 		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(3))
 			.ConfigureAwait(false);
-		edit.Text = text;
+		edit.Focus();
+		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(3))
+			.ConfigureAwait(false);
+		if(edit.Patterns.TextEdit is not null)
+			edit.Text = text;
 
 		var checkbox = await Task.Run(()=>{
 			var result = Retry
