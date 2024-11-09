@@ -27,14 +27,12 @@ public partial class WinTalkAutoService
 					);
 					return ms is [] or null ? null : ms;
 				},
-				timeout: TimeSpan.FromSeconds(3),
+				timeout: TimeSpan.FromSeconds(5),
 				interval: TimeSpan.FromSeconds(0.05),
 				ignoreException: true
 			))
 			.ConfigureAwait(false);
-		return !result.Success
-			? throw new InvalidOperationException("Failed to get menu item")
-			: result.Result ?? [];
+		return !result.Success ? [] : result.Result ?? [];
 	}
 
 	static async ValueTask InvokeModalMenuItemAsync(
