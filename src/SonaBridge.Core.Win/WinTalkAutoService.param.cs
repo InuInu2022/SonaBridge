@@ -248,7 +248,10 @@ public partial class WinTalkAutoService
 		string voiceName
 	)
 	{
-		if(_styleSliderCache.TryGetValue(voiceName, out var sliders))
+		if(
+			_styleSliderCache.TryGetValue(voiceName, out var sliders)
+			&& sliders.Any(s => s is null)
+		)
 		{
 			return sliders;
 		}
@@ -279,7 +282,7 @@ public partial class WinTalkAutoService
 			.ConfigureAwait(false);
 		if (!result.Success) return [];
 		var foundSliders = result.Result ?? [];
-		_styleSliderCache.Add(voiceName, foundSliders);
+		_styleSliderCache[voiceName] = foundSliders;
 		return foundSliders;
 	}
 
@@ -301,7 +304,10 @@ public partial class WinTalkAutoService
 	internal async ValueTask<IReadOnlyList<string>>
 	GetCurrentStyleNamesAsync(string voiceName)
 	{
-		if(_styleNamesCache.TryGetValue(voiceName, out var names)){
+		if(
+			_styleNamesCache.TryGetValue(voiceName, out var names)
+			&& names.Any(s => s is null)
+		){
 			return names;
 		}
 		styleBarButton ??= await GetStyleBarButton().ConfigureAwait(false);
@@ -347,7 +353,7 @@ public partial class WinTalkAutoService
 			))
 			.ConfigureAwait(false);
 		var foundNames = textBoxes.ConvertAll(t => t.Text);
-		_styleNamesCache.Add(voiceName, foundNames);
+		_styleNamesCache[voiceName] = foundNames;
 		return foundNames;
 	}
 
