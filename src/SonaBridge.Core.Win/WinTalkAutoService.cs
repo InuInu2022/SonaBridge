@@ -126,6 +126,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		await SetCastAsync(voiceName).ConfigureAwait(false);
-		await WinTalkAutoService.SetCurrentPreset(presetName).ConfigureAwait(false);
+		await SetCurrentPreset(presetName).ConfigureAwait(false);
 	}
 }
