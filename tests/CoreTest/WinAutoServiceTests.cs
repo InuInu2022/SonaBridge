@@ -109,7 +109,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Fact]
-	public async void GetVoices()
+	public async Task GetVoices()
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
@@ -126,7 +126,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[InlineData("Tamaki", true)]
 	[InlineData("Takahashi", true)]
 	//[InlineData("No Name Voice", false)]
-	public async void SetVoice(string name, bool expected)
+	public async Task SetVoice(string name, bool expected)
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
@@ -139,7 +139,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Fact]
-	public async void SetCastAsyncThrowsInvalidOperationExceptionWhenCastNameNotFound()
+	public async Task SetCastAsyncThrowsInvalidOperationExceptionWhenCastNameNotFound()
 	{
 		//var _service.= new WinTalkAutoService();
 		await _service.GetAppWindowAsync();
@@ -160,7 +160,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[InlineData("Tanaka San", "管理に湯として、大した事が出来た無いのが申し訳ないよねらとぉってるのですが。")]
 	[InlineData("Tamaki", "イウしキーを呑んとるのですが。")]
 	[InlineData("Suzuki Tsudumi", "そうやなす。")]
-	public async void SetVoiceAndTextAsync(
+	public async Task SetVoiceAndTextAsync(
 		string castName,
 		string text
 	)
@@ -181,7 +181,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[InlineData("Tanaka San", "管理に湯として、大した事が出来た無いのが申し訳ないよねらとぉってるのですが。")]
 	[InlineData("Tamaki", "イウしキーを呑んとるのですが。")]
 	[InlineData("Suzuki Tsudumi", "そうやなす。")]
-	public async void OutputWavAsync(
+	public async Task OutputWavAsync(
 		string castName,
 		string text
 	)
@@ -209,7 +209,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[Theory]
 	[InlineData("tmp")]
 	[InlineData("abc")]
-	public async void FixExtension(string ext)
+	public async Task FixExtension(string ext)
 	{
 		//var _service.= new WinTalkAutoService();
 		var path = Path.Combine(
@@ -226,7 +226,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Fact]
-	public async void OpenGlobalParamsPanel()
+	public async Task OpenGlobalParamsPanel()
 	{
 		//var _service.= new WinTalkAutoService();
 		//var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -245,7 +245,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Fact]
-	public async void GetGlobalParamSliders()
+	public async Task GetGlobalParamSliders()
 	{
 		//var _service.= new WinTalkAutoService();
 		//var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -284,7 +284,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[InlineData("Alpha", 1.0)]
 	[InlineData("Into.", 1.0)]
 	[InlineData("Hus.", 1.0)]
-	public async void SetGlobalParamSingle(
+	public async Task SetGlobalParamSingle(
 		string key,
 		double value,
 		bool hasKey = true,
@@ -311,7 +311,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[Theory]
 	[InlineData("Tanaka San")]
 	[InlineData("Takahashi")]
-	public async void GetStyleSliders(string voice)
+	public async Task GetStyleSliders(string voice)
 	{
 		//var _service.= new WinTalkAutoService();
 		//var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -355,7 +355,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	[InlineData("Tanaka San","Normal", 0.5)]
 	[InlineData("Futaba Minato","Child", 0.23)]
 	[InlineData("Futaba Minato","Shy", 0.78)]
-	public async void SetStyleSingle(
+	public async Task SetStyleSingle(
 		string voice,
 		string key,
 		double value,
@@ -381,7 +381,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Fact]
-	public async void PrepareAppAsync()
+	public async Task PrepareAppAsync()
 	{
 		var progress = new Progress<int>(value => _output.WriteLine($"progress {value}/n?"));
 		_sw.Start();
@@ -394,7 +394,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 
 	[Theory]
 	[InlineData("Takahashi")]
-	public async void GetCurrentPresets(string voice)
+	public async Task GetCurrentPresets(string voice)
 	{
 		await _service.SetCastAsync(voice);
 		_sw.Start();
@@ -411,7 +411,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 
 	[Theory]
 	[InlineData("Takahashi","テストB")]
-	public async void SetPresetsAsync(string voice, string presets)
+	public async Task SetPresetsAsync(string voice, string presets)
 	{
 		await _service.SetCastAsync(voice);
 		_sw.Start();

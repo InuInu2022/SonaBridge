@@ -36,7 +36,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 	}
 
 	[Fact]
-	public async void CallTest()
+	public async Task CallTest()
 	{
 		_sw.Restart();
 
@@ -44,7 +44,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 	}
 
 	[Fact]
-	public async void GetAvailableCastsAsync()
+	public async Task GetAvailableCastsAsync()
 	{
 		_sw.Restart();
 
@@ -54,7 +54,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 	}
 
 	[Fact]
-	public async void SetCastAsync()
+	public async Task SetCastAsync()
 	{
 		_sw.Restart();
 		long a;
@@ -69,7 +69,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 		_output.WriteLine($"- {_sw.ElapsedMilliseconds - a} ms: 3");
 	}
 	[Fact]
-	public async void SetCastSingleAsync()
+	public async Task SetCastSingleAsync()
 	{
 		await _service.SetCastAsync("Tanaka San");
 		_sw.Restart();
@@ -77,7 +77,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 	}
 
 	[Fact]
-	public async void OutputWaveToFileAsync()
+	public async Task OutputWaveToFileAsync()
 	{
 		_sw.Restart();
 
@@ -91,7 +91,7 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 	[InlineData("Takahashi")]
 	[InlineData("Sato Sasara")]
 	[InlineData("Tanaka San")]
-	public async void Presets(string voice)
+	public async Task Presets(string voice)
 	{
 		_sw.Restart();
 		var result = await _service.GetPresetsAsync(voice);

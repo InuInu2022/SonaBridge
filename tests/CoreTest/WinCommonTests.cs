@@ -19,7 +19,7 @@ public class WinCommonTests(ITestOutputHelper output)
 	[Theory]
 	[InlineData("保存テスト音声")]
 	[InlineData("これは音声保存のテストです")]
-	public async void WinSaveWavAsync(string text)
+	public async Task WinSaveWavAsync(string text)
 	{
 		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
@@ -49,7 +49,7 @@ public class WinCommonTests(ITestOutputHelper output)
 	}
 
 	[Fact]
-	public async void SendKeyTest()
+	public async Task SendKeyTest()
 	{
 		using var service = new WinTalkAutoService();
 		await service.GetAppWindowAsync();
