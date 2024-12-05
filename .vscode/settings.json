@@ -1,4 +1,11 @@
 {
+	"workbench.colorCustomizations": {
+        "titleBar.activeBackground": "#ffa200",
+        "titleBar.activeForeground": "#4c422f",
+
+        "activityBar.background": "#ffa200",
+        "activityBar.foreground": "#8d6f31"
+    },
 	"cSpell.words": [
 		"JUCE",
 		"Krymets",
