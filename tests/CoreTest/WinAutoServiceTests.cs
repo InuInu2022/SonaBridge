@@ -309,9 +309,11 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Theory]
-	[InlineData("Tanaka San")]
-	[InlineData("Takahashi")]
-	public async Task GetStyleSliders(string voice)
+	[InlineData("Tanaka San", 5)]
+	[InlineData("Takahashi", 3)]
+	[InlineData("Soyogi Soyogi", 8)]
+	[InlineData("Futaba Minato", 6)]
+	public async Task GetStyleSliders(string voice, int expect)
 	{
 		//var _service.= new WinTalkAutoService();
 		//var sw = System.Diagnostics.Stopwatch.StartNew();
@@ -321,7 +323,7 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 		var sliders = await _service.GetStyleSlidersAsync(voice);
 
 		_sw.Stop();
-		foreach(var s in sliders)
+		foreach (var s in sliders)
 		{
 			var s2 = s.AsSlider();
 			_output.WriteLine($"Slider: {s2.Value}, max:{s2.Maximum} min:{s2.Minimum}");
@@ -337,6 +339,8 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 		}
 		_output.WriteLine($"get style names time: {_sw.Elapsed.TotalMilliseconds} ms.");
 
+		names.Count.Should().Be(expect);
+
 		_sw.Restart();
 		var values = await _service.GetCurrentStylesAsync(voice);
 		_sw.Stop();
@@ -349,12 +353,13 @@ public class WinAutoServiceTests : IClassFixture<ServiceFixture>, IDisposable, I
 	}
 
 	[Theory]
-	[InlineData("Tanaka San","Hoge", 1.0, false, false)]
-	[InlineData("Tanaka San","Normal", 1.0)]
-	[InlineData("Tanaka San","Normal", 0.0)]
-	[InlineData("Tanaka San","Normal", 0.5)]
-	[InlineData("Futaba Minato","Child", 0.23)]
-	[InlineData("Futaba Minato","Shy", 0.78)]
+	[InlineData("Tanaka San", "Hoge", 1.0, false, false)]
+	[InlineData("Tanaka San", "Normal", 1.0)]
+	[InlineData("Tanaka San", "Normal", 0.0)]
+	[InlineData("Tanaka San", "Normal", 0.5)]
+	[InlineData("Futaba Minato", "Child", 0.23)]
+	[InlineData("Futaba Minato", "Shy", 0.78)]
+	[InlineData("Soyogi Soyogi", "Loud", 0.78)]
 	public async Task SetStyleSingle(
 		string voice,
 		string key,
