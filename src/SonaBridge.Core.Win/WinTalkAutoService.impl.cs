@@ -213,6 +213,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
 		{
+			Mouse.Position = cb.BoundingRectangle.Center();
 			cb.Expand();
 		}
 
@@ -223,12 +224,13 @@ public partial class WinTalkAutoService : ITalkAutoService
 			System.Diagnostics.Debug.WriteLine(item.Name);
 		}
 		var voiceNames = result.Select(v => v.Name).ToList();
-		VoiceNames = [..voiceNames];
+		VoiceNames = [.. voiceNames];
 
 		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Collapsed))
 		{
 			WinCommon.ShowWindow(_win);
-			cb.Collapse();
+			//cb.Collapse();
+			cb.Click();
 		}
 		await cb.WaitUntilClickableAsync().ConfigureAwait(false);
 

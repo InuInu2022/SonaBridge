@@ -248,7 +248,7 @@ public partial class WinTalkAutoService
 		string voiceName
 	)
 	{
-		if(
+		if (
 			_styleSliderCache.TryGetValue(voiceName, out var sliders)
 			&& sliders.Any(s => s is null)
 		)
@@ -304,10 +304,11 @@ public partial class WinTalkAutoService
 	internal async ValueTask<IReadOnlyList<string>>
 	GetCurrentStyleNamesAsync(string voiceName)
 	{
-		if(
+		if (
 			_styleNamesCache.TryGetValue(voiceName, out var names)
 			&& names.Any(s => s is null)
-		){
+		)
+		{
 			return names;
 		}
 		styleBarButton ??= await GetStyleBarButton().ConfigureAwait(false);
@@ -315,46 +316,81 @@ public partial class WinTalkAutoService
 		var walker = _automation.TreeWalkerFactory.GetRawViewWalker();
 		walker.GetNextSibling(group);
 
-		//TODO: 通常loop化
-		AutomationElement? lastElem = group;
-		await Task
-			.Run(() => Retry.WhileFalse(
-				() =>
-				{
-					var elem = walker.GetNextSibling(lastElem);
-					var isText = elem.ControlType == ControlType.Text;
-					lastElem = elem;
-					return isText;
-				},
-				timeout: TimeSpan.FromSeconds(1),
-				interval: TimeSpan.FromSeconds(0.001),
-				ignoreException: true
-			))
-			.ConfigureAwait(false);
-
+		var lastElem = group;
+		lastElem = await SearchText(walker, lastElem).ConfigureAwait(false);
 		AutomationElement? lastText = lastElem.AsTextBox();
 		List<TextBox> textBoxes = [lastText.AsTextBox()];
-		//TODO: 通常loop化
-		await Task
-			.Run(() => Retry.WhileTrue(
-				() =>
-				{
-					var elem = walker.GetNextSibling(lastText);
-					var isText = elem.ControlType == ControlType.Text;
-					lastText = elem;
-					if(isText) {
-						textBoxes.Add(elem.AsTextBox());
-					}
-					return isText;
-				},
-				timeout: TimeSpan.FromSeconds(1),
-				interval: TimeSpan.FromSeconds(0.001),
-				ignoreException: true
-			))
-			.ConfigureAwait(false);
+		lastText = await SearchNextTextBox(walker, lastText, textBoxes).ConfigureAwait(false);
+
+		//2列目
+		if (textBoxes.Count == 6)
+		{
+			var last = textBoxes[^1];
+			walker.GetNextSibling(last);
+			lastElem = await SearchText(walker, last).ConfigureAwait(false);
+			if (lastElem?.ControlType == ControlType.Text)
+			{
+				var elm = lastElem.AsTextBox();
+				textBoxes = [.. textBoxes, elm];
+				lastText = await SearchNextTextBox(walker, elm, textBoxes).ConfigureAwait(false);
+			}
+		}
+
 		var foundNames = textBoxes.ConvertAll(t => t.Text);
 		_styleNamesCache[voiceName] = foundNames;
 		return foundNames;
+
+		static async Task<AutomationElement?> SearchText(
+			FlaUI.Core.ITreeWalker walker, AutomationElement? lastElem)
+		{
+			await Task
+				.Run(() => Retry.WhileFalse(
+					() =>
+					{
+						var elem = walker.GetNextSibling(lastElem);
+						if (elem.ControlType == ControlType.Table)
+						{
+							//セリフ列まで来たら終了
+							return true;
+						}
+						var isText = elem.ControlType == ControlType.Text;
+						lastElem = elem;
+						return isText;
+					},
+					timeout: TimeSpan.FromSeconds(1),
+					interval: TimeSpan.FromSeconds(0.001),
+					ignoreException: true
+				))
+				.ConfigureAwait(false);
+			return lastElem;
+		}
+
+		static async Task<AutomationElement> SearchNextTextBox(
+			FlaUI.Core.ITreeWalker walker,
+			AutomationElement lastText,
+			List<TextBox> textBoxes
+		)
+		{
+			await Task
+				.Run(() => Retry.WhileTrue(
+					() =>
+					{
+						var elem = walker.GetNextSibling(lastText);
+						var isText = elem.ControlType == ControlType.Text;
+						lastText = elem;
+						if (isText)
+						{
+							textBoxes.Add(elem.AsTextBox());
+						}
+						return isText;
+					},
+					timeout: TimeSpan.FromSeconds(1),
+					interval: TimeSpan.FromSeconds(0.001),
+					ignoreException: true
+				))
+				.ConfigureAwait(false);
+			return lastText;
+		}
 	}
 
 	// 1.4 sec.
