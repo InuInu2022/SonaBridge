@@ -48,7 +48,7 @@ dotnet_style_parentheses_in_other_operators = never_if_unnecessary:silent
 dotnet_style_parentheses_in_relational_binary_operators = always_for_clarity:silent
 
 # Modifier preferences
-dotnet_style_require_accessibility_modifiers = for_non_interface_members:silent
+dotnet_style_require_accessibility_modifiers = omit_if_default:suggestion
 
 # Expression-level preferences
 dotnet_style_coalesce_expression = true:suggestion
@@ -80,9 +80,9 @@ dotnet_remove_unnecessary_suppression_exclusions = none
 [*.cs]
 
 # var preferences
-csharp_style_var_elsewhere = false:silent
-csharp_style_var_for_built_in_types = false:silent
-csharp_style_var_when_type_is_apparent = false:silent
+csharp_style_var_elsewhere = true:silent
+csharp_style_var_for_built_in_types = true:silent
+csharp_style_var_when_type_is_apparent = true:silent
 
 # Expression-bodied members
 csharp_style_expression_bodied_accessors = true:silent
@@ -109,7 +109,7 @@ csharp_prefer_static_local_function = true:warning
 csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:silent
 
 # Code-block preferences
-csharp_prefer_braces = true:silent
+csharp_prefer_braces = when_multiline:silent
 csharp_prefer_simple_using_statement = true:suggestion
 
 # Expression-level preferences
@@ -365,5 +365,17 @@ dotnet_naming_style.s_camelcase.word_separator =
 dotnet_naming_style.s_camelcase.capitalization = camel_case
 
 # User additions
+
+# IDE0040: アクセシビリティ修飾子を追加します
+dotnet_diagnostic.IDE0040.severity = suggestion
+
+
+# IDE0040: アクセシビリティ修飾子を追加します
+dotnet_diagnostic.IDE0040.severity = suggestion
+
+
+# IDE0040: アクセシビリティ修飾子を追加します
+dotnet_diagnostic.IDE0040.severity = suggestion
+
 [*.Generated.cs]
 dotnet_analyzer_diagnostic.severity = none
