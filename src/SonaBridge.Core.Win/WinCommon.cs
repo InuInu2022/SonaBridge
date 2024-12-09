@@ -76,7 +76,11 @@ public sealed partial class WinCommon
 				{
 					return window
 						.ModalWindows
+#if NETSTANDARD2_0
+						.FirstOrDefault( w => w.Title.Contains(titleContainText) );
+#else
 						.FirstOrDefault(w => w.Title.Contains(titleContainText, StringComparison.Ordinal));
+#endif
 				},
 				TimeSpan.FromSeconds(timeout),
 				TimeSpan.FromMilliseconds(100))

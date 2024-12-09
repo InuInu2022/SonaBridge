@@ -165,8 +165,9 @@ public partial class WinTalkAutoService
 
 		var list = items
 			.Select(item => item.Name)
-			.SkipLast(1)
-			.ToArray();
+			//.SkipLast(1)
+			.ToArray()
+			[..^1];
 		WinCommon.SaveMousePoint();
 		cb.Click();
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);

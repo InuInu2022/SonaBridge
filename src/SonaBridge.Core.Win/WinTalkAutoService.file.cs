@@ -23,7 +23,11 @@ public partial class WinTalkAutoService
 			.ConfigureAwait(false);
 
 		await InvokeModalMenuItemAsync(m =>
+#if NETSTANDARD2_0
+			m.Name.Contains(wavExportMenuName))
+#else
 			m.Name.Contains(wavExportMenuName, StringComparison.InvariantCultureIgnoreCase))
+#endif
 			.ConfigureAwait(false);
 
 		sw.Stop();
@@ -71,11 +75,19 @@ public partial class WinTalkAutoService
 			var newfull = Path.Combine(Path.GetDirectoryName(chk!)!, newName);
 			var r2 = Retry.WhileException(
 				()=>{
+#if NETSTANDARD2_0
+					File.Delete(newfull);
+					File.Move(
+						chk,
+						newfull
+					);
+#else
 					File.Move(
 						chk,
 						newfull,
 						overwrite: true
 					);
+#endif
 				},
 				TimeSpan.FromSeconds(5),
 				TimeSpan.FromSeconds(0.1)
