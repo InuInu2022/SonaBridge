@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net6.0-windows;</TargetFrameworks>
+    <TargetFrameworks>net8.0-windows;netstandard2.0</TargetFrameworks>
     <IsPublishable>false</IsPublishable>
   </PropertyGroup>
   <ItemGroup>
@@ -8,8 +8,20 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
+
+    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.6.0" />
+		<PackageReference Include="PolySharp" Version="1.15.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+		<PackageReference Include="IndexRange" Version="1.0.3" />
+		<PackageReference Include="TA.System.Runtime.CompilerServices.RuntimeHelpers.GetSubArray" Version="1.0.1">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
   </ItemGroup>
 </Project>
