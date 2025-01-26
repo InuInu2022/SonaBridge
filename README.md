@@ -7,6 +7,11 @@ A .NET bridge library for VoiSona / VoiSona Talk.
 - Windows (Win10/11, x64) : WIP
 - macOS (Apple Silicon)  : Future plan
 
+## Supported apps
+
+- VoiSona : Future plan
+- VoiSona Talk : WIP
+
 ## Licenses
 
 - [PolySharp](https://github.com/Sergio0694/PolySharp) / MIT License
