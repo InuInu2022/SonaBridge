@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="FlaUI.UIA3" Version="4.0.0" />
 
-    <PackageReference Include="System.Drawing.Common" Version="9.0.0" />
+    <PackageReference Include="System.Drawing.Common" Version="9.0.1" />
 
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
