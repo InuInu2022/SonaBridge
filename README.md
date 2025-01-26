@@ -14,6 +14,8 @@ A .NET bridge library for VoiSona / VoiSona Talk.
 
 ## Licenses
 
+[licenses](./licenses/)
+
 - [PolySharp](https://github.com/Sergio0694/PolySharp) / MIT License
   - Copyright (c) 2022 Sergio Pedri
 - [FlaUI](https://github.com/FlaUI/FlaUI) / MIT License

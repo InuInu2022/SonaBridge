@@ -1,0 +1,1 @@
+dotnet-project-licenses -f .\licenses\ -m -i .\SonaBridge.sln -e -c -u -t
