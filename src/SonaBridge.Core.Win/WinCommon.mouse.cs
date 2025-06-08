@@ -6,11 +6,11 @@ namespace SonaBridge.Core.Win;
 
 public sealed partial class WinCommon
 {
-	static Point? originalPosition;
+	static Point? originalMousePosition;
 
 	public static void SaveMousePoint()
 	{
-		originalPosition = Mouse.Position;
+		originalMousePosition = Mouse.Position;
 	}
 
 	public static async ValueTask RestoreMousePointAsync(
@@ -18,7 +18,12 @@ public sealed partial class WinCommon
 	)
 	{
 		//Mouse.MoveTo(originalPosition ?? new(0,0));
-		Mouse.Position = originalPosition ?? new(0,0);
+		Mouse.Position = originalMousePosition ?? new(0, 0);
 		await Task.Delay(wait).ConfigureAwait(false);
+	}
+
+	public static void MoveMouseCorner()
+	{
+		Mouse.Position = new(0, 0);
 	}
 }

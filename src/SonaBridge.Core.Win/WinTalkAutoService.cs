@@ -14,6 +14,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await _win.WaitUntilEnabledAsync()
 			.ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		await PrepareAppAsync().ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 	}
@@ -25,6 +26,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		await SetUtterance(text).ConfigureAwait(false);
 		await PlayUtterance(token).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
@@ -36,6 +38,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		var voices = await GetVoiceNames().ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		return [.. voices];
@@ -52,6 +55,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		var result = await SetVoiceAsync(castName).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		if(!result){
@@ -63,6 +67,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		await SetUtterance(text).ConfigureAwait(false);
 
 		Debug.WriteLine($"output wav file: {path}");
@@ -78,7 +83,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 			await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 			return false;
 		}
-		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+		finally
+		{
+			await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+		}
 
 		return true;
 	}
@@ -102,6 +110,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		var result = await GetCurrentStylesAsync(voiceName).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		return result;
@@ -111,6 +120,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);
 		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
 		await SetCurrentStylesAsync(voiceName, styles).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 	}

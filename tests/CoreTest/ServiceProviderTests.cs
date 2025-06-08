@@ -7,12 +7,13 @@ using Xunit.Abstractions;
 
 namespace CoreTest;
 
-public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetime
+public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetime, IDisposable
 {
-	private readonly ServiceFixture _fixture;
-	private readonly ITalkAutoService _service;
-	private readonly ITestOutputHelper _output;
-	private readonly Stopwatch _sw;
+	readonly ServiceFixture _fixture;
+	readonly ITalkAutoService _service;
+	readonly ITestOutputHelper _output;
+	readonly Stopwatch _sw;
+	bool _disposedValue;
 
 	public ServiceProviderTests(ServiceFixture fixture, ITestOutputHelper output)
 	{
@@ -104,5 +105,33 @@ public class ServiceProviderTests : IClassFixture<ServiceFixture>, IAsyncLifetim
 		_output.WriteLine($"{_sw.ElapsedMilliseconds} ms");
 	}
 
+	protected virtual void Dispose(bool disposing)
+	{
+		if (!_disposedValue)
+		{
+			if (disposing)
+			{
+				// マネージド状態を破棄します (マネージド オブジェクト)
+				_service?.Dispose();
+			}
 
+			// TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
+			// TODO: 大きなフィールドを null に設定します
+			_disposedValue = true;
+		}
+	}
+
+	// // TODO: 'Dispose(bool disposing)' にアンマネージド リソースを解放するコードが含まれる場合にのみ、ファイナライザーをオーバーライドします
+	// ~ServiceProviderTests()
+	// {
+	//     // このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
+	//     Dispose(disposing: false);
+	// }
+
+	public void Dispose()
+	{
+		// このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
+		Dispose(disposing: true);
+		GC.SuppressFinalize(this);
+	}
 }

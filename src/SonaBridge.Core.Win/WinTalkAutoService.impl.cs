@@ -58,7 +58,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	/// <param name="progress">処理の進捗数通知用</param>
 	internal async ValueTask PrepareAppAsync(IProgress<int>? progress = null)
 	{
-		int p = 0;
+		var p = 0;
 		progress?.Report(++p);
 
 		await GetAppWindowAsync().ConfigureAwait(false);
@@ -74,7 +74,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var trackBtn = _win?
 			.FindFirstDescendant(f => f.ByName("TrackPanel::Button"))
 			.AsButton();
-		for (int i = 0; i < voices.Count; i++)
+		for (var i = 0; i < voices.Count; i++)
 		{
 			await trackBtn.WaitUntilClickableAsync().ConfigureAwait(false);
 			trackBtn?.Invoke();
@@ -85,7 +85,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			.FindFirstChild(f => f.ByControlType(ControlType.List)).AsListBox();
 		var gridPattern = track?.Patterns.Grid.Pattern;
 
-		for (int i = 0; i < voices.Count; i++)
+		for (var i = 0; i < voices.Count; i++)
 		{
 			var item = gridPattern?.GetItem(i + 1, 0).AsListBoxItem();
 			item?.ScrollIntoView();
@@ -125,10 +125,14 @@ public partial class WinTalkAutoService : ITalkAutoService
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
-		//using (_topWindowCacheRequest?.Activate())
-		//{
-			_win ??= _app?.GetAllTopLevelWindows(_automation)[0];
-		//}
+
+		await Task
+			.Run(() =>
+				Retry.WhileException(
+					() => _win ??= _app?.GetAllTopLevelWindows(_automation)[0],
+					TimeSpan.FromSeconds(3),
+					TimeSpan.FromMilliseconds(50))
+			).ConfigureAwait(false);
 	}
 
 	internal static async ValueTask PlayUtterance(
@@ -141,9 +145,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var box = GetTextBox(col);
 		var t = box?.Text is null or [] ? "5.0" : box.Text;
 		var sec = double.Parse(t, CultureInfo.InvariantCulture);
-		var tp = TimeSpan.FromSeconds(sec+0.5);
+		var tp = TimeSpan.FromSeconds(sec + 0.5);
 
-		var result = await Task.Run(()=>
+		var result = await Task.Run(() =>
 			Retry.WhileNull(() =>
 				row?
 					.FindAllDescendants(f => f
@@ -211,9 +215,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (cb is null) return [];
 
-		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		if (cb.ExpandCollapseState != ExpandCollapseState.Expanded)
 		{
 			Mouse.Position = cb.BoundingRectangle.Center();
+			cb.Focus();
 			cb.Expand();
 		}
 
@@ -226,11 +231,12 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var voiceNames = result.Select(v => v.Name).ToList();
 		VoiceNames = [.. voiceNames];
 
-		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Collapsed))
+		if (cb.ExpandCollapseState != ExpandCollapseState.Collapsed)
 		{
 			WinCommon.ShowWindow(_win);
 			//cb.Collapse();
 			cb.Click();
+			WinCommon.MoveMouseCorner();
 		}
 		await cb.WaitUntilClickableAsync().ConfigureAwait(false);
 
@@ -253,8 +259,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await cb.WaitUntilEnabledAsync()
 			.ConfigureAwait(false);
 
-		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		if (cb.ExpandCollapseState != ExpandCollapseState.Expanded)
 		{
+			cb.Focus();
 			cb.Expand();
 		}
 
@@ -268,6 +275,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		voice.Focus();
 		voice.Expand();
 		await SetVoiceInnerAsync(_automation).ConfigureAwait(false);
+		WinCommon.MoveMouseCorner();
 
 		//wait
 		await Task.Run(() =>
@@ -297,8 +305,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (cb is null) return false;
 
-		if (!cb.ExpandCollapseState.Equals(ExpandCollapseState.Expanded))
+		if (cb.ExpandCollapseState != ExpandCollapseState.Expanded)
 		{
+			cb.Focus();
 			cb.Expand();
 		}
 
@@ -312,9 +321,10 @@ public partial class WinTalkAutoService : ITalkAutoService
 		voice.Focus();
 		voice.Expand();
 		await SetVoiceInnerAsync(_automation).ConfigureAwait(false);
+		WinCommon.MoveMouseCorner();
 
 		//wait
-		await Task.Run(()=>
+		await Task.Run(() =>
 			Retry.WhileTrue(() =>
 			{
 				cb.WaitUntilClickable();
@@ -339,7 +349,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 	internal static void SetFocusFirstRow(bool isWithRightClick = false)
 	{
 		var row = GetRow();
-		row.AsGridRow().Focus();
+		row?.AsGridRow()?.Focus();
 		if (isWithRightClick)
 		{
 			row.WaitUntilClickable();

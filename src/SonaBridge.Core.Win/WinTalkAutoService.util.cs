@@ -14,7 +14,8 @@ public partial class WinTalkAutoService
 	{
 		var result = await Task
 			.Run(() => Retry.WhileNull(
-				() => {
+				() =>
+				{
 					var ms = _automation
 					.GetDesktop()
 					.FindAllChildren()
