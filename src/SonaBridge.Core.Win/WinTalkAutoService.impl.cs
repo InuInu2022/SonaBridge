@@ -17,7 +17,7 @@ namespace SonaBridge.Core.Win;
 
 public partial class WinTalkAutoService : ITalkAutoService
 {
-	private readonly string _pathToVsTalk = """C:\Program Files\Techno-Speech\VoiSona Talk""";
+	private readonly string _pathToVsTalk = """C:\Program Files\Techno-Speech\VoiSona Talk\VoiSona Talk.exe""";
 	private static Application? _app;
 	private static Window? _win;
 	private static AutomationElement? _table;
@@ -121,7 +121,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 		await Task.Delay(100).ConfigureAwait(false);
 	}
 
-
 	internal async ValueTask GetAppWindowAsync(string? pathToExe = null)
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
@@ -219,12 +218,14 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		if (cb is null) return [];
 
+		WinCommon.SaveMousePoint();
 		if (cb.ExpandCollapseState != ExpandCollapseState.Expanded)
 		{
 			Mouse.Position = cb.BoundingRectangle.Center();
 			cb.Focus();
 			cb.Expand();
 		}
+		WinCommon.MoveMouseCorner();
 
 		var result = await GetVoiceListAsync().ConfigureAwait(false);
 		foreach (var item in result)
@@ -243,6 +244,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			WinCommon.MoveMouseCorner();
 		}
 		await cb.WaitUntilClickableAsync().ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 
 		return VoiceNames ?? [];
 	}
@@ -262,6 +264,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 		await cb.WaitUntilEnabledAsync()
 			.ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
 
 		if (cb.ExpandCollapseState != ExpandCollapseState.Expanded)
 		{
@@ -294,6 +297,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 			TimeSpan.FromMilliseconds(75))
 		).ConfigureAwait(false);
 		await Task.Delay(50).ConfigureAwait(false); //安全策
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 
 		Console.WriteLine($"last:{_lastVoiceName}, set:{voiceName}");
 		_lastVoiceName = voiceName;
@@ -301,6 +305,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		return true;
 	}
 
+	[Obsolete("Use SetVoiceAsync instead.")]
 	internal static async ValueTask<bool> SetVoiceAsync2(string voiceName)
 	{
 		if (string.Equals(_lastVoiceName, voiceName, StringComparison.Ordinal)) { return true; }
@@ -397,7 +402,9 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	static ComboBox? GetVoiceCombo()
 	{
-		if (_voiceCombo is not null) return _voiceCombo;
+		if (_voiceCombo?.IsAvailable == true) {
+			return _voiceCombo;
+		}
 		_voiceCombo = _win?.FindFirstDescendant(
 				f => f.ByControlType(ControlType.ComboBox)
 				.And(f.ByHelpText("ボイスを選択"))
