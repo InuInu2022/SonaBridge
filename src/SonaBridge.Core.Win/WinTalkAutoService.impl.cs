@@ -125,13 +125,29 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		_app ??= await GetApp(pathToExe).ConfigureAwait(false);
 
-		await Task
-			.Run(() =>
-				Retry.WhileException(
-					() => _win ??= _app?.GetAllTopLevelWindows(_automation)[0],
-					TimeSpan.FromSeconds(3),
-					TimeSpan.FromMilliseconds(50))
-			).ConfigureAwait(false);
+		if (_win?.IsAvailable == true) return;
+
+		// _winの取得をリトライ
+		var winResult = await Task.Run(() =>
+			Retry.WhileNull(
+				() => {
+					try
+					{
+						var windows = _app?.GetAllTopLevelWindows(_automation);
+						return (windows != null && windows.Length > 0) ? windows[0] : null;
+					}
+					catch
+					{
+						return null;
+					}
+				},
+				timeout: TimeSpan.FromSeconds(5),
+				interval: TimeSpan.FromMilliseconds(100),
+				ignoreException: true
+			)
+		).ConfigureAwait(false);
+
+		_win = winResult.Result;
 	}
 
 	internal static async ValueTask PlayUtterance(
