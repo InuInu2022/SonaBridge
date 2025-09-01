@@ -59,7 +59,7 @@ public partial class WinTalkAutoService : ITalkAutoService
 		var result = await SetVoiceAsync(castName).ConfigureAwait(false);
 		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
 		if(!result){
-			throw new InvalidOperationException("FlaUI operation error!");
+			throw new InvalidOperationException($"{nameof(SetCastAsync)}({castName}): FlaUI operation error!");
 		}
 	}
 
