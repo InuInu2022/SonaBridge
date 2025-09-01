@@ -41,8 +41,23 @@ public partial class WinTalkAutoService
 	)
 	{
 		var menus = await GetModalMenuItems().ConfigureAwait(false);
-		var eMenu = menus?.FirstOrDefault(predicate);
-		eMenu.AsMenuItem().Invoke();
-		//await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
+		var eMenu = await Task.Run(() =>
+				Retry.WhileNull(() =>
+					menus.FirstOrDefault(m =>
+						m.Properties.Name.IsSupported
+						&& predicate(m))?
+						.AsMenuItem(),
+					timeout: TimeSpan.FromSeconds(3),
+					interval: TimeSpan.FromMilliseconds(50),
+					ignoreException: true
+				)
+			)
+			.ConfigureAwait(false);
+
+		if (eMenu.Success && eMenu.Result is not null)
+		{
+			eMenu.Result.Invoke();
+			//await WinCommon.WaitUntilInputIsProcessedAsync().ConfigureAwait(false);
+		}
 	}
 }
