@@ -190,8 +190,12 @@ public partial class WinTalkAutoService : ITalkAutoService
 		edit.Focus();
 		await edit.WaitUntilEnabledAsync(TimeSpan.FromSeconds(3))
 			.ConfigureAwait(false);
-		if(edit.Patterns.TextEdit is not null)
+		if (edit.Patterns.TextEdit is not null)
+		{
 			edit.Text = text;
+			await Task.Delay(50).ConfigureAwait(false);
+			Keyboard.Type(VirtualKeyShort.RETURN);
+		}
 
 		var checkbox = await Task.Run(()=>{
 			var result = Retry
