@@ -379,5 +379,10 @@ dotnet_naming_style.s_camelcase.capitalization = camel_case
 dotnet_diagnostic.IDE0040.severity = suggestion
 dotnet_diagnostic.IDE0055.severity = suggestion
 
+MA0051.maximum_lines_per_method = 100
+MA0051.maximum_statements_per_method = 100
+
+dotnet_diagnostic.SMA0021.severity = none;
+
 [*.Generated.cs]
 dotnet_analyzer_diagnostic.severity = none
