@@ -1,13 +1,16 @@
-﻿using Microsoft.Kiota.Abstractions.Authentication;
-using Microsoft.Kiota.Http.HttpClientLibrary;
-using Microsoft.Extensions.Configuration;
+﻿using System.Diagnostics;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Threading.Tasks;
 using SonaBridge.Core.Rest;
 using SonaBridge.Core.Rest.Internal;
-using System.Diagnostics;
-using System.Threading.Tasks;
+using SonaBridge.Core.Rest.Internal.Models;
+using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
+
 using Xunit.Abstractions;
-using System.Text;
-using System.Net.Http.Headers;
+using static SonaBridge.Core.Rest.Extension.WaitExtension;
 
 namespace CoreRestTest;
 
@@ -16,105 +19,144 @@ namespace CoreRestTest;
 	"SMA0024:Enum to String",
 	Justification = "<保留中>"
 )]
-public class InternalTest(ServiceFixture fixture, ITestOutputHelper output) : IClassFixture<ServiceFixture>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "SMA0040:Missing Using Statement", Justification = "<保留中>")]
+public class InternalTest(ServiceFixture fixture, ITestOutputHelper output)
+	: IClassFixture<ServiceFixture>
 {
 	readonly ITestOutputHelper _output = output;
 	readonly ServiceFixture _fixture = fixture;
 
+	readonly JsonSerializerOptions jsonOption = new()
+	{
+		WriteIndented = true,
+		Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+	};
+
 	[Fact]
 	public async Task Voices()
 	{
-		// まず手動でHTTP接続を確認
-		//await TestApiEndpoint(username, password);
-
-
 		_output.WriteLine($"Adapter BaseUrl: {_fixture.Adapter.BaseUrl}");
-		// Create the API client
-		var client = new RawTalkApi(_fixture.Adapter);
 
-		var result = await client.Voices.GetAsync();
-
+		var result = await _fixture.Client.Voices.GetAsync();
 	}
 
-	private async Task TestApiEndpoint(string username, string password)
+	[Fact]
+	public async Task Languages()
 	{
-		using var httpClient = new HttpClient { BaseAddress = new Uri("http://localhost:32766") };
-		var authToken = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{username}:{password}"));
-		httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-			"Basic",
-			authToken
+		var result = await _fixture.Client.Languages.GetAsync();
+		Assert.NotNull(result);
+
+		_output.WriteLine(
+			$"Languages: {string.Join(", ", result?.Items?.Select(i => i.Language) ?? [])}"
 		);
+	}
+
+	[Fact]
+	public async Task SpeechSyntheses()
+	{
+		var body = new SpeechSynthesesPostRequestBody
+		{
+			Text = "これはテストです",
+			ForceEnqueue = true,
+			Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
+			VoiceName = "tanaka-san_ja_JP",
+			VoiceVersion = "2.0.0",
+			Language = "ja_JP",
+		};
 
 		try
 		{
-			var response = await httpClient.GetAsync("/api/talk/v1/voices");
-			_output.WriteLine($"Manual HTTP test - Status: {response.StatusCode}");
-			var content = await response.Content.ReadAsStringAsync();
-			_output.WriteLine($"Response: {content}");
+			var posted = await _fixture.Client.SpeechSyntheses.PostAsync(body);
+			Assert.NotNull(posted);
 
-			Assert.True(
-				response.IsSuccessStatusCode,
-				$"Expected success but got {response.StatusCode}"
+			_output.WriteLine(
+				$"Posted result: {JsonSerializer.Serialize(posted, jsonOption)}"
 			);
+
+			Assert.NotNull(posted.Uuid);
+
+			if (posted.Uuid is not { } uuid) return;
+
+			var info = await _fixture.Client.SpeechSyntheses[uuid].GetAsync();
+			do
+			{
+				info = await _fixture.Client.SpeechSyntheses[uuid].GetAsync();
+				_output.WriteLine($"Progress: {info?.ProgressPercentage}");
+				await Task.Delay(10);
+			}
+			while (info is not null && info.ProgressPercentage < 100);
+
+		}
+		catch (Content_created400Error ex400)
+		{
+			_output.WriteLine($"400 Error Details:");
+			_output.WriteLine($"Error Type: {ex400.GetType().Name}");
+			_output.WriteLine($"Message: {ex400.Message}");
+
+			var props = ex400
+				.GetType()
+				.GetProperties(
+					System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance
+				);
+
+			foreach (var prop in props)
+			{
+				try
+				{
+					var value = prop.GetValue(ex400);
+					_output.WriteLine($"{prop.Name}: {value}");
+				}
+				catch (Exception propEx)
+				{
+					_output.WriteLine($"{prop.Name}: <Could not retrieve value: {propEx.Message}>");
+				}
+			}
+
+			throw;
+		}
+		catch (Microsoft.Kiota.Abstractions.ApiException apiEx)
+		{
+			_output.WriteLine($"API Exception:");
+			_output.WriteLine($"Status Code: {apiEx.ResponseStatusCode}");
+			_output.WriteLine($"Message: {apiEx.Message}");
+			_output.WriteLine(
+				$"Headers: {string.Join(", ", apiEx.ResponseHeaders?.Select(h => $"{h.Key}={string.Join(",", h.Value)}") ?? [])}"
+			);
+
+			throw;
 		}
 		catch (Exception ex)
 		{
-			_output.WriteLine($"Manual HTTP test failed: {ex.Message}");
+			_output.WriteLine($"Unexpected Exception:");
+			_output.WriteLine($"Type: {ex.GetType().Name}");
+			_output.WriteLine($"Message: {ex.Message}");
+			_output.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+			throw;
 		}
-	}
-}
 
-public class ServiceFixture : IDisposable
-{
-	bool _disposedValue;
+		var result = await _fixture.Client.SpeechSyntheses.GetAsync();
+		Assert.NotNull(result);
 
-	public ServiceFixture()
-	{
-		var builder = new ConfigurationBuilder().AddUserSecrets<InternalTest>();
-		var config = builder.Build();
-
-		UserName = config["Api:Username"] ?? throw new InvalidOperationException("Api:Username is not configured.");
-		Password = config["Api:Password"] ?? throw new InvalidOperationException("Api:Password is not configured.");
-
-		AuthProvider = new BasicAuthenticationProvider(UserName, Password);
-		Adapter = new HttpClientRequestAdapter(AuthProvider)
-		{
-			BaseUrl = "http://localhost:32766/api/talk/v1",
-		};
+		_output.WriteLine(
+			$"SpeechSyntheses result: {JsonSerializer.Serialize(result, jsonOption)}"
+		);
 	}
 
-	public required string UserName { get; init; }
-	public required string Password { get; init; }
-	public BasicAuthenticationProvider AuthProvider { get; }
-	public HttpClientRequestAdapter Adapter { get; }
-
-	protected virtual void Dispose(bool disposing)
+	[Fact]
+	public async Task SpeechSynthesesWithWait()
 	{
-		if (!_disposedValue)
-		{
-			if (disposing)
+		var result = await _fixture.Client.SpeechSyntheses.PostAndWaitAsync(
+			new()
 			{
-				// マネージド状態を破棄します (マネージド オブジェクト)
-				Adapter?.Dispose();
+				Text = "これはテストです",
+				ForceEnqueue = true,
+				Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
+				VoiceName = "tanaka-san_ja_JP",
+				VoiceVersion = "2.0.0",
+				Language = "ja_JP",
 			}
-
-			// TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
-			// TODO: 大きなフィールドを null に設定します
-			_disposedValue = true;
-		}
-	}
-
-	// // TODO: 'Dispose(bool disposing)' にアンマネージド リソースを解放するコードが含まれる場合にのみ、ファイナライザーをオーバーライドします
-	// ~ServiceFixture()
-	// {
-	//     // このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
-	//     Dispose(disposing: false);
-	// }
-
-	public void Dispose()
-	{
-		// このコードを変更しないでください。クリーンアップ コードを 'Dispose(bool disposing)' メソッドに記述します
-		Dispose(disposing: true);
-		GC.SuppressFinalize(this);
+		);
+		Assert.NotNull(result);
 	}
 }
