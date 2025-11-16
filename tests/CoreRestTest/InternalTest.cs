@@ -1,15 +1,12 @@
-﻿using System.Diagnostics;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Encodings.Web;
+﻿using System.Text.Encodings.Web;
 using System.Text.Json;
-using System.Threading.Tasks;
-using SonaBridge.Core.Rest;
-using SonaBridge.Core.Rest.Internal;
+
 using SonaBridge.Core.Rest.Internal.Models;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
+using SonaBridge.Core.Rest.Internal.TextAnalyses;
 
 using Xunit.Abstractions;
+
 using static SonaBridge.Core.Rest.Extension.WaitExtension;
 
 namespace CoreRestTest;
@@ -158,5 +155,19 @@ public class InternalTest(ServiceFixture fixture, ITestOutputHelper output)
 			}
 		);
 		Assert.NotNull(result);
+	}
+
+	[Fact]
+	public async Task TextAnalyze()
+	{
+		var body = new TextAnalysesPostRequestBody
+		{
+			Text = "これはテストです。This is a test.",
+			Language = "ja_JP",
+		};
+		var posted = await _fixture.Client.TextAnalyses.PostAsync(body);
+		Assert.NotNull(posted?.Uuid);
+		if (posted?.Uuid is not { } uuid) return;
+		var result = await _fixture.Client.TextAnalyses[uuid].GetAsync();
 	}
 }
