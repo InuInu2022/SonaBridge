@@ -18,21 +18,9 @@ namespace SonaBridge.Core.Rest.Internal.TextAnalyses
         /// <summary>Flag for whether existing speech synthesis and/or text analysis requests can be removed to enqueue this request. If true, the oldest requests, except those that are in &quot;queued&quot; or &quot;running&quot; states, may be automatically removed to enqueue this request. If the request queue of the system still is full, this API fails with a 409 (Conflict) error.</summary>
         public bool? ForceEnqueue { get; set; }
         /// <summary>Language (e.g. &quot;ja_JP&quot;)</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? Language { get; set; }
-#nullable restore
-#else
-        public string Language { get; set; }
-#endif
+        public required string Language { get; set; }
         /// <summary>Non-empty text to analyze</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? Text { get; set; }
-#nullable restore
-#else
-        public string Text { get; set; }
-#endif
+        public required string Text { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::SonaBridge.Core.Rest.Internal.TextAnalyses.TextAnalysesPostRequestBody"/> and sets the default values.
         /// </summary>
