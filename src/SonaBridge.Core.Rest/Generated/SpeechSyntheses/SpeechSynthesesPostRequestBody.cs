@@ -38,8 +38,13 @@ namespace SonaBridge.Core.Rest.Internal.SpeechSyntheses
         public global::SonaBridge.Core.Rest.Internal.Models.Speech_synthesis_global_parameters GlobalParameters { get; set; }
 #endif
         /// <summary>Language (e.g. &quot;ja_JP&quot;)</summary>
-        public required string Language { get; set; }
-
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Language { get; set; }
+#nullable restore
+#else
+        public string Language { get; set; }
+#endif
         /// <summary>Absolute path to the output WAV file on the local filesystem. This parameter is required when *destination* is *file*.</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
