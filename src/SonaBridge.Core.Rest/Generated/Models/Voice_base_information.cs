@@ -14,13 +14,13 @@ namespace SonaBridge.Core.Rest.Internal.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The display_names property</summary>
+        /// <summary>The display_name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_names>? DisplayNames { get; set; }
+        public List<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_name>? DisplayName { get; set; }
 #nullable restore
 #else
-        public List<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_names> DisplayNames { get; set; }
+        public List<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_name> DisplayName { get; set; }
 #endif
         /// <summary>The languages property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -71,7 +71,7 @@ namespace SonaBridge.Core.Rest.Internal.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "display_names", n => { DisplayNames = n.GetCollectionOfObjectValues<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_names>(global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_names.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "display_name", n => { DisplayName = n.GetCollectionOfObjectValues<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_name>(global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_name.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "languages", n => { Languages = n.GetCollectionOfPrimitiveValues<string>()?.AsList(); } },
                 { "voice_name", n => { VoiceName = n.GetStringValue(); } },
                 { "voice_version", n => { VoiceVersion = n.GetStringValue(); } },
@@ -84,7 +84,7 @@ namespace SonaBridge.Core.Rest.Internal.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
-            writer.WriteCollectionOfObjectValues<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_names>("display_names", DisplayNames);
+            writer.WriteCollectionOfObjectValues<global::SonaBridge.Core.Rest.Internal.Models.Voice_base_information_display_name>("display_name", DisplayName);
             writer.WriteCollectionOfPrimitiveValues<string>("languages", Languages);
             writer.WriteStringValue("voice_name", VoiceName);
             writer.WriteStringValue("voice_version", VoiceVersion);
