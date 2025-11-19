@@ -40,6 +40,10 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 
 		Assert.NotNull(result);
 		Assert.NotEmpty(result);
+
+		output.WriteLine(
+			$"Available Casts: {string.Join(", ", result)}"
+		);
 	}
 
 	[Theory]
@@ -61,6 +65,23 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 		{
 			Assert.NotEqual(name, result);
 		}
+	}
+
+	[Theory]
+	[InlineData("これはテストです", "output_test1.wav")]
+	[InlineData("テストなのです", "output_test2.wav")]
+	[InlineData("あめんぼ赤いなあいうえお", "output_test3.wav")]
+	public async Task SaveFile(string text, string fileName)
+	{
+		Assert.NotNull(fixture.Service);
+		var folder = Path.Combine(Path.GetTempPath(), fileName);
+		output.WriteLine($"Output Path: {folder}");
+
+		var result = await fixture.Service
+			.OutputWaveToFileAsync(text, folder);
+
+		Assert.True(result);
+		Assert.True(File.Exists(folder));
 	}
 }
 
@@ -87,7 +108,9 @@ public class RestServiceFixture : IDisposable, IAsyncLifetime
 
 	public async Task InitializeAsync()
 	{
-		Service = await TalkRestService.StartAsync(UserName, Password);
+		Service = await TalkRestService
+			.StartAsync(UserName, Password, updateLibrary:true)
+			.ConfigureAwait(false);
 	}
 
 	protected virtual void Dispose(bool disposing)

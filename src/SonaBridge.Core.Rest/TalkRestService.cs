@@ -86,7 +86,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		var instance = new TalkRestService(user, password, port, language);
 
 		//TODO: ライブラリ情報取得更新
-		if(await instance.TryUpdateLibraryAsync() is false)
+		if (updateLibrary && !await instance.TryUpdateLibraryAsync())
 		{
 			instance._logger.LogWarning("Failed to update voice library.");
 		}
@@ -150,9 +150,31 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		throw new NotImplementedException();
 	}
 
-	public Task<bool> OutputWaveToFileAsync(string text, string path)
+	public async Task<bool> OutputWaveToFileAsync(string text, string path)
 	{
-		throw new NotImplementedException();
+		try
+		{
+			var result = await Client.SpeechSyntheses.PostAndWaitAsync(
+				new()
+				{
+					Text = text,
+					ForceEnqueue = true,
+					Destination = SpeechSynthesesPostRequestBody_destination.File,
+					VoiceName = LastCast.Name,
+					VoiceVersion = LastCast.Version,
+					Language = LastCast.Language,
+					OutputFilePath = path,
+				},
+				TimeSpan.FromMinutes(5),
+				ctx: CancellationToken.None
+			);
+		}
+		catch (Exception ex)
+		{
+			_logger.LogWarning("Exception: {Message}", ex.Message);
+			return false;
+		}
+		return true;
 	}
 
 	public ValueTask SetCastAsync(string castName)
@@ -206,8 +228,9 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 				ctx: token ?? CancellationToken.None
 			);
 		}
-		catch (System.Exception)
+		catch (System.Exception ex)
 		{
+			_logger.LogWarning("Exception: {Message}", ex.Message);
 			return false;
 		}
 		return true;
