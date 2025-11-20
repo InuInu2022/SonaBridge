@@ -14,4 +14,9 @@ public partial class TalkRestService
 		Level = LogLevel.Error,
 		Message = "Failed to get available casts: {Message}")]
 	partial void LogFailedToGetAvailableCasts(string message);
+
+	[LoggerMessage(
+		Level = LogLevel.Error,
+		Message = "Exception: {ExMessage}")]
+	partial void LogException(string exMessage);
 }
