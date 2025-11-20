@@ -6,15 +6,16 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 using SonaBridge.Core.Common;
+
 using SonaBridge.Core.Rest.Internal;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
 using SonaBridge.Core.Rest.Internal.Voices;
+using SonaBridge.Core.Rest.Models;
+
 using static SonaBridge.Core.Rest.Extension.WaitExtension;
+using static SonaBridge.Core.Rest.Extension.SpeakResultExtensions;
 
 namespace SonaBridge.Core.Rest;
-
-using CastData = (string Name, string Version, string Language);
-
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
 	"Usage",
 	"MA0004:Use Task.ConfigureAwait",
@@ -26,22 +27,23 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	BasicAuthenticationProvider AuthProvider { get; set; }
 	HttpClientRequestAdapter Adapter { get; set; }
-	RawTalkApi Client { get; set; }
+
 	string Language { get; set; }
 
-	ConcurrentDictionary<string, VoiceData> VoiceByName { get; set; } = [];
-	ConcurrentDictionary<string, string> VoiceByDisplay { get; set; } = [];
-
+	/// <summary>
+	/// 音声ライブラリ内部名(e.g. "tanaka-san_ja_JP")をキーとする変換キャッシュテーブル
+	/// </summary>
+	ConcurrentDictionary<VoiceNameKey, VoiceData> VoiceByName { get; set; } = [];
+	/// <summary>
+	/// 音声ライブラリ表示名(e.g. "田中傘")をキーとする変換キャッシュテーブル
+	/// </summary>
+	ConcurrentDictionary<VoiceDisplayKey, VoiceNameKey> VoiceByDisplay { get; set; } = [];
 	CastData LastCast { get; set; }
 
 	readonly ILogger<TalkRestService> _logger;
+	readonly RawTalkApi _client;
 
-	readonly record struct VoiceData(
-		string VoiceName,
-		string[] VoiceVersions,
-		Dictionary<string, string[]> Languages,
-		Dictionary<string, string> DisplayNames
-	);
+
 
 	public TalkRestService(
 		string user,
@@ -58,16 +60,19 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		AuthProvider = new BasicAuthenticationProvider(user, password);
 		Adapter = new HttpClientRequestAdapter(AuthProvider)
 		{
-			BaseUrl = $"http://localhost:{port}/api/talk/v1",
+			BaseUrl = $"""http://localhost:{port}/api/talk/v1""",
 		};
 		Language = language;
 
-		LastCast = ("tanaka-san_ja_JP", "2.0.1", language);
+		LastCast = new(new("tanaka-san_ja_JP"), "2.0.1", language);
 
-		Client = new RawTalkApi(Adapter);
+		_client = new RawTalkApi(Adapter);
 		_logger = logger ?? NullLogger<TalkRestService>.Instance;
 	}
 
+	/// <summary>
+	/// <inheritdoc/>
+	/// </summary>
 	/// <seealso cref="StartAsync(string, string, int, string, bool)"/>
 	[Obsolete($"use {nameof(StartAsync)} method.")]
 	public async Task StartAsync()
@@ -104,7 +109,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		VoicesGetResponse? result;
 		try
 		{
-			result = await Client.Voices.GetAsync();
+			result = await _client.Voices.GetAsync();
 		}
 		catch (Exception ex)
 		{
@@ -131,7 +136,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public Task<string> GetCastAsync()
 	{
-		return Task.FromResult(LastCast.Name);
+		return Task.FromResult(LastCast.Name.ToString());
 	}
 
 	public Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
@@ -142,7 +147,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	[Obsolete("REST APIではサポートされていません。")]
 	public ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
 	{
-		throw new NotImplementedException();
+		throw new NotSupportedException("REST APIではサポートされていません。");
 	}
 
 	public Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName)
@@ -154,13 +159,13 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await Client.SpeechSyntheses.PostAndWaitAsync(
+			var result = await _client.SpeechSyntheses.PostAndWaitAsync(
 				new()
 				{
 					Text = text,
 					ForceEnqueue = true,
 					Destination = SpeechSynthesesPostRequestBody_destination.File,
-					VoiceName = LastCast.Name,
+					VoiceName = LastCast.Name.ToString(),
 					VoiceVersion = LastCast.Version,
 					Language = LastCast.Language,
 					OutputFilePath = path,
@@ -179,11 +184,11 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public ValueTask SetCastAsync(string castName)
 	{
-		if (VoiceByDisplay.TryGetValue(castName, out var id)
+		if (VoiceByDisplay.TryGetValue(new(castName), out var id)
 		&& VoiceByName.TryGetValue(id, out var cast))
 		{
-			LastCast = (
-				castName,
+			LastCast = new(
+				cast.VoiceName,
 				cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
 				Language
 			);
@@ -195,14 +200,16 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return ValueTask.CompletedTask;
 	}
 
+
 	public ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
 	{
 		throw new NotImplementedException();
 	}
 
+	[Obsolete("REST APIではサポートされていません。")]
 	public ValueTask SetPresetsAsync(string voiceName, string presetName)
 	{
-		throw new NotImplementedException();
+		throw new NotSupportedException("REST APIではサポートされていません。");
 	}
 
 	public ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
@@ -214,13 +221,13 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await Client.SpeechSyntheses.PostAndWaitAsync(
+			var result = await _client.SpeechSyntheses.PostAndWaitAsync(
 				new()
 				{
 					Text = text,
 					ForceEnqueue = true,
 					Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
-					VoiceName = LastCast.Name,
+					VoiceName = LastCast.Name.ToString(),
 					VoiceVersion = LastCast.Version,
 					Language = LastCast.Language,
 				},
@@ -228,12 +235,43 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 				ctx: token ?? CancellationToken.None
 			);
 		}
-		catch (System.Exception ex)
+		catch (Exception ex)
 		{
 			_logger.LogWarning("Exception: {Message}", ex.Message);
 			return false;
 		}
 		return true;
+	}
+
+
+
+	public async Task<SpeakResult> SpeakAsync(
+		string text,
+		string analyzedText = "",
+		CancellationToken? token = null)
+	{
+		try
+		{
+			var result = await _client.SpeechSyntheses.PostAndWaitAsync(
+				new()
+				{
+					Text = text,
+					ForceEnqueue = true,
+					Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
+					VoiceName = LastCast.Name.ToString(),
+					VoiceVersion = LastCast.Version,
+					Language = LastCast.Language,
+				},
+				TimeSpan.FromMinutes(5),
+				ctx: token ?? CancellationToken.None
+			);
+			return result?.ToSpeakResult(analyzedText) ?? default;
+		}
+		catch (Exception ex)
+		{
+			_logger.LogWarning($"Exception: {ex.Message}");
+			throw;
+		}
 	}
 
 	protected virtual void Dispose(bool disposing)

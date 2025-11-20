@@ -4,7 +4,7 @@ public partial class TalkRestService
 {
 	async ValueTask<bool> TryUpdateLibraryAsync()
 	{
-		var result = await Client
+		var result = await _client
 			.Voices
 			.GetAsync()
 			.ConfigureAwait(false);
@@ -23,7 +23,7 @@ public partial class TalkRestService
 				return;
 
 			var appendVoice = new VoiceData(
-				VoiceName: x.VoiceName,
+				VoiceName: new(x.VoiceName),
 				VoiceVersions: [x.VoiceVersion],
 
 				Languages: x.Languages is { } langs
@@ -41,7 +41,7 @@ public partial class TalkRestService
 			);
 
 			_ = VoiceByName.AddOrUpdate(
-				x.VoiceName,
+				new(x.VoiceName),
 				addValueFactory: _ => appendVoice,
 				updateValueFactory: (_, oldValue) =>
 				{
@@ -61,8 +61,8 @@ public partial class TalkRestService
 
 			if (x.DisplayName?.FirstOrDefault()?.Name is not { } name) return;
 			_ = VoiceByDisplay.AddOrUpdate(
-				name,
-				addValueFactory: _ => x.VoiceName,
+				new(name),
+				addValueFactory: _ => new(x.VoiceName),
 				updateValueFactory: (_, oldValue) => oldValue
 			);
 		});
