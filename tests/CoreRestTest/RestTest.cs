@@ -87,6 +87,21 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 		Assert.True(result);
 		Assert.True(File.Exists(folder));
 	}
+
+	[Theory]
+	[InlineData("さとうささら", 4)]
+	[InlineData("田中傘", 5)]
+	[InlineData("梵そよぎ", 8)]
+	[InlineData("トモ", 1)]
+	public async Task GetStyle(string castName, int count)
+	{
+		Assert.NotNull(fixture.Service);
+		var result = await fixture.Service.GetStylesAsync(castName);
+
+		Assert.NotEmpty(result);
+		Assert.Equal(count, result.Count);
+		Assert.All(result.Values, value => Assert.InRange(value, 0.0, 1.0));
+	}
 }
 
 [SuppressMessage("Design", "MA0048:File name must match type name", Justification = "<保留中>")]

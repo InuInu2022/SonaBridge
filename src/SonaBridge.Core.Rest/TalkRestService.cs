@@ -14,6 +14,7 @@ using SonaBridge.Core.Rest.Models;
 
 using static SonaBridge.Core.Rest.Extension.WaitExtension;
 using static SonaBridge.Core.Rest.Extension.SpeakResultExtensions;
+using System.ComponentModel.DataAnnotations;
 
 namespace SonaBridge.Core.Rest;
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -80,10 +81,25 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		throw new NotSupportedException();
 	}
 
+	/// <summary>
+	/// TalkRestServiceのインスタンスを生成し、音声ライブラリ情報を取得します
+	/// </summary>
+	/// <param name="user">API認証用ユーザー名</param>
+	/// <param name="password">API認証用パスワード</param>
+	/// <param name="port">SonaBridge TalkのREST APIポート番号</param>
+	/// <param name="language">使用する言語コード(e.g. "ja_JP")</param>
+	/// <param name="updateLibrary">音声ライブラリ情報を最新の状態に更新するかどうか</param>
+	/// <returns>初期化されたTalkRestServiceのインスタンス</returns>
 	public static async Task<TalkRestService> StartAsync(
 		string user,
+		[DataType(DataType.Password)]
 		string password,
+		[Range(1, 65535)]
 		int port = 32766,
+		[RegularExpression(
+			"""^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,8})+$""",
+			ErrorMessage = "形式が正しくありません。"
+		)]
 		string language = "ja_JP",
 		bool updateLibrary = false
 	)
@@ -136,7 +152,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return Task.FromResult(LastCast.Name.ToString());
 	}
 
-	public Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
+	public async Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
 	{
 		throw new NotImplementedException();
 	}
@@ -147,9 +163,28 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		throw new NotSupportedException("REST APIではサポートされていません。");
 	}
 
-	public Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName)
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0002:IEqualityComparer<string> or IComparer<string> is missing", Justification = "<保留中>")]
+	public async Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName)
 	{
-		throw new NotImplementedException();
+		//throw new NotImplementedException();
+		if (!VoiceByDisplay.TryGetValue(new(voiceName), out var voice)
+		|| !VoiceByName.TryGetValue(voice, out var voiceData))
+		{
+			return new Dictionary<string, double>().AsReadOnly();
+		}
+
+		var result = await _client
+			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault() ?? "2.0.0"]
+			.GetAsync();
+
+		Dictionary<string, double> globalParams = new(StringComparer.Ordinal);
+
+		var weights = result?.DefaultStyleWeights ?? [];
+		var names = result?.StyleNames ?? [];
+		return names
+			.Zip(weights, (k, v) => (k, v: v ?? 0.0))
+			.ToDictionary(x => x.k, x => x.v)
+			.AsReadOnly();
 	}
 
 	public async Task<bool> OutputWaveToFileAsync(string text, string path)
