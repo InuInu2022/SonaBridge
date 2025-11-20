@@ -1,7 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 
-using SonaBridge.Core.Rest.Internal.Models;
-
 namespace SonaBridge.Core.Rest.Models;
 
 public readonly record struct
@@ -21,27 +19,3 @@ GlobalParameters(
 	double? Volume,
 	IDictionary<string, object>? AdditionalData
 );
-
-public static class GlobalParametersExtensions
-{
-	extension(Speech_synthesis_global_parameters ssParams)
-	{
-		/// <summary>
-		/// Convert to GlobalParameters
-		/// </summary>
-		/// <returns></returns>
-		public GlobalParameters ToGlobalParameters()
-		{
-			return new GlobalParameters(
-				ssParams.Alp,
-				ssParams.Huskiness,
-				ssParams.Intonation,
-				ssParams.Pitch,
-				ssParams.Speed,
-				ssParams.StyleWeights,
-				ssParams.Volume,
-				ssParams.AdditionalData
-			);
-		}
-	}
-}
