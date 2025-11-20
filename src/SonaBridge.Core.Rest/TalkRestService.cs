@@ -1,20 +1,21 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
+using System.ComponentModel.DataAnnotations;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
 using Microsoft.Kiota.Http.HttpClientLibrary;
-using SonaBridge.Core.Common;
 
+using SonaBridge.Core.Common;
 using SonaBridge.Core.Rest.Internal;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
 using SonaBridge.Core.Rest.Internal.Voices;
 using SonaBridge.Core.Rest.Models;
 
-using static SonaBridge.Core.Rest.Extension.WaitExtension;
+using static SonaBridge.Core.Rest.Extension.GlobalParametersExtensions;
 using static SonaBridge.Core.Rest.Extension.SpeakResultExtensions;
-using System.ComponentModel.DataAnnotations;
+using static SonaBridge.Core.Rest.Extension.WaitExtension;
 
 namespace SonaBridge.Core.Rest;
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
@@ -65,7 +66,12 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		};
 		LastLanguage = new(language);
 
-		LastCast = new(new("tanaka-san_ja_JP"), "2.0.1", LastLanguage);
+		LastCast = new
+			(new("tanaka-san_ja_JP"),
+			"2.0.1",
+			LastLanguage,
+			new()
+		);
 
 		_client = new RawTalkApi(Adapter);
 		_logger = logger ?? NullLogger<TalkRestService>.Instance;
@@ -149,7 +155,11 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public Task<string> GetCastAsync()
 	{
-		return Task.FromResult(LastCast.Name.ToString());
+		var name = VoiceByName.TryGetValue(LastCast.Name, out var voiceData)
+			&& voiceData.DisplayNames.TryGetValue(LastLanguage, out var castName)
+			? castName
+			: string.Empty;
+		return Task.FromResult(name);
 	}
 
 	public async Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
@@ -176,6 +186,13 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault() ?? "2.0.0"]
 			.GetAsync();
 
+		LastCast = LastCast with
+		{
+			GlobalParameters = new(
+				StyleWeights: result?.DefaultStyleWeights ?? []
+			),
+		};
+
 		var weights = result?.DefaultStyleWeights ?? [];
 		var names = result?.StyleNames ?? [];
 		return names
@@ -198,16 +215,23 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 					VoiceVersion = LastCast.Version,
 					Language = LastCast.Language.ToString(),
 					OutputFilePath = path,
+					CanOverwriteFile = true,
+					GlobalParameters = LastCast.GlobalParameters.ToSsGp(),
 				},
 				TimeSpan.FromMinutes(5),
 				ctx: CancellationToken.None
 			);
+
+			if (result is null){
+				return false;
+			}
 		}
 		catch (Exception ex)
 		{
 			LogException(ex.Message); //TODO:better logging
 			return false;
 		}
+
 		return true;
 	}
 
@@ -219,7 +243,8 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			LastCast = new(
 				cast.VoiceName,
 				cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
-				LastLanguage
+				LastLanguage,
+				default
 			);
 		}
 		else

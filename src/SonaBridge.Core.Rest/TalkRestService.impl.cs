@@ -95,6 +95,7 @@ public partial class TalkRestService
 			VoiceName = LastCast.Name.ToString(),
 			VoiceVersion = LastCast.Version,
 			Language = LastCast.Language.ToString(),
+			GlobalParameters = LastCast.GlobalParameters.ToSsGp(),
 		},
 		TimeSpan.FromMinutes(5),
 		ctx: token ?? CancellationToken.None

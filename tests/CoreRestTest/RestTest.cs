@@ -15,7 +15,6 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 
 	: IClassFixture<RestServiceFixture>
 {
-	[Fact]
 	public async Task StartTest()
 	{
 	}

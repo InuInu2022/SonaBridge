@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 
+using SonaBridge.Core.Rest.Models;
+
 namespace SonaBridge.Core.Rest;
 
 public partial class TalkRestService
@@ -13,7 +15,8 @@ public partial class TalkRestService
 	readonly record struct CastData(
 		VoiceNameKey Name,
 		string Version,
-		LanguageKey Language
+		LanguageKey Language,
+		GlobalParameters GlobalParameters
 	);
 
 	/// <summary>
