@@ -30,6 +30,9 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 		var result = await fixture.Service.SpeakAsync(text);
 
 		Assert.True(result);
+
+		var result2 = await fixture.Service.SpeakAsync(text, "");
+		output.WriteLine($"Analyzed Text: {result2}");
 	}
 
 	[Fact]

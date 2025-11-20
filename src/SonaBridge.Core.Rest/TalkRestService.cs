@@ -247,7 +247,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public async Task<SpeakResult> SpeakAsync(
 		string text,
-		string analyzedText = "",
+		string analyzedText,
 		CancellationToken? token = null)
 	{
 		try
