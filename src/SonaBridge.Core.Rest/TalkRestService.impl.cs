@@ -1,3 +1,5 @@
+using System.Linq;
+
 namespace SonaBridge.Core.Rest;
 
 public partial class TalkRestService
@@ -14,7 +16,7 @@ public partial class TalkRestService
 			return false;
 		}
 
-		data.Items?.ForEach(x =>
+		data.Items?.ForEach(static x =>
 		{
 			if (x.VoiceName is null)
 				return;
@@ -28,15 +30,16 @@ public partial class TalkRestService
 
 				Languages: x.Languages is { } langs
 					? new(StringComparer.Ordinal) {
-						{ x.VoiceVersion, [.. langs] } }
+						{ x.VoiceVersion, [.. langs.Select(ln => new LanguageKey(ln))] },
+					}
 					: [],
 
 				DisplayNames: x.DisplayName?
-					.Where(v => v is { Name: not null, Language: not null })?
+					.Where(v => v is { Name: not null, Language: not null })
+					.ToList()
 					.ToDictionary(
-						v => v.Language!,
-						v => v.Name!,
-						StringComparer.Ordinal)
+						v => new LanguageKey(v.Language!),
+						v => v.Name!)
 					?? []
 			);
 
@@ -51,7 +54,7 @@ public partial class TalkRestService
 					if (x.Languages is not null)
 					{
 						oldValue.Languages
-							.TryAdd(x.VoiceVersion, [.. x.Languages]);
+							.TryAdd(x.VoiceVersion, [.. x.Languages.Select(l => new LanguageKey(l))]);
 					}
 					return oldValue with
 					{

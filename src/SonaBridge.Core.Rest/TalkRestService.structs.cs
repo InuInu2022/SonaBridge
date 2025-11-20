@@ -13,7 +13,7 @@ public partial class TalkRestService
 	readonly record struct CastData(
 		VoiceNameKey Name,
 		string Version,
-		string Language
+		LanguageKey Language
 	);
 
 	/// <summary>
@@ -31,8 +31,8 @@ public partial class TalkRestService
 	readonly record struct VoiceData(
 		VoiceNameKey VoiceName,
 		string[] VoiceVersions,
-		Dictionary<string, string[]> Languages,
-		Dictionary<string, string> DisplayNames
+		Dictionary<string, LanguageKey[]> Languages,
+		Dictionary<LanguageKey, string> DisplayNames
 	);
 
 	/// <summary>
@@ -55,5 +55,25 @@ public partial class TalkRestService
 	)
 	{
 		public override string ToString() => VoiceName;
+	}
+
+	readonly record struct LanguageKey(
+		[RegularExpression("""^[a-zA-Z]{2,3}([-_][a-zA-Z]{2,8}){1,2}$""")]
+		string Language
+	)
+	{
+		public override string ToString() => Language;
+
+		public static bool operator ==(LanguageKey left, string? right) =>
+			string.Equals(left.Language, right, StringComparison.Ordinal);
+
+		public static bool operator !=(LanguageKey left, string? right) =>
+			!string.Equals(left.Language, right, StringComparison.Ordinal);
+
+		public static bool operator ==(string? left, LanguageKey right) =>
+			string.Equals(left, right.Language, StringComparison.Ordinal);
+
+		public static bool operator !=(string? left, LanguageKey right) =>
+			!string.Equals(left, right.Language, StringComparison.Ordinal);
 	}
 }

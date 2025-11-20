@@ -28,16 +28,16 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	BasicAuthenticationProvider AuthProvider { get; set; }
 	HttpClientRequestAdapter Adapter { get; set; }
 
-	string Language { get; set; }
+	LanguageKey LastLanguage { get; set; }
 
 	/// <summary>
 	/// 音声ライブラリ内部名(e.g. "tanaka-san_ja_JP")をキーとする変換キャッシュテーブル
 	/// </summary>
-	ConcurrentDictionary<VoiceNameKey, VoiceData> VoiceByName { get; set; } = [];
+	static ConcurrentDictionary<VoiceNameKey, VoiceData> VoiceByName { get; set; } = [];
 	/// <summary>
 	/// 音声ライブラリ表示名(e.g. "田中傘")をキーとする変換キャッシュテーブル
 	/// </summary>
-	ConcurrentDictionary<VoiceDisplayKey, VoiceNameKey> VoiceByDisplay { get; set; } = [];
+	static ConcurrentDictionary<VoiceDisplayKey, VoiceNameKey> VoiceByDisplay { get; set; } = [];
 	CastData LastCast { get; set; }
 
 	readonly ILogger<TalkRestService> _logger;
@@ -62,9 +62,9 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		{
 			BaseUrl = $"""http://localhost:{port}/api/talk/v1""",
 		};
-		Language = language;
+		LastLanguage = new(language);
 
-		LastCast = new(new("tanaka-san_ja_JP"), "2.0.1", language);
+		LastCast = new(new("tanaka-san_ja_JP"), "2.0.1", LastLanguage);
 
 		_client = new RawTalkApi(Adapter);
 		_logger = logger ?? NullLogger<TalkRestService>.Instance;
@@ -90,7 +90,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		var instance = new TalkRestService(user, password, port, language);
 
-		//TODO: ライブラリ情報取得更新
+		//ライブラリ情報取得更新
 		if (updateLibrary && !await instance.TryUpdateLibraryAsync())
 		{
 			instance._logger.LogWarning("Failed to update voice library.");
@@ -101,7 +101,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	/// <summary>
 	/// <inheritdoc/>
-	/// <see cref="Language"/>の設定変更で取得できる名称が異なります
+	/// <see cref="LastLanguage"/>の設定変更で取得できる名称が異なります
 	/// </summary>
 
 	public async Task<string[]> GetAvailableCastsAsync()
@@ -122,10 +122,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return result
 			.Items?
 			.Select(v => v.DisplayName?
-				.Find(x => string.Equals(
-					x.Language,
-					Language,
-					StringComparison.Ordinal))?
+				.Find(x => x.Language == LastLanguage)?
 				.Name
 			)
 			.Where(name => name is not null and not "")
@@ -167,7 +164,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 					Destination = SpeechSynthesesPostRequestBody_destination.File,
 					VoiceName = LastCast.Name.ToString(),
 					VoiceVersion = LastCast.Version,
-					Language = LastCast.Language,
+					Language = LastCast.Language.ToString(),
 					OutputFilePath = path,
 				},
 				TimeSpan.FromMinutes(5),
@@ -176,7 +173,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		}
 		catch (Exception ex)
 		{
-			_logger.LogWarning("Exception: {Message}", ex.Message);
+			LogException(ex.Message); //TODO:better logging
 			return false;
 		}
 		return true;
@@ -190,7 +187,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			LastCast = new(
 				cast.VoiceName,
 				cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
-				Language
+				LastLanguage
 			);
 		}
 		else
@@ -221,23 +218,11 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await _client.SpeechSyntheses.PostAndWaitAsync(
-				new()
-				{
-					Text = text,
-					ForceEnqueue = true,
-					Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
-					VoiceName = LastCast.Name.ToString(),
-					VoiceVersion = LastCast.Version,
-					Language = LastCast.Language,
-				},
-				TimeSpan.FromMinutes(5),
-				ctx: token ?? CancellationToken.None
-			);
+			var result = await ProcessSpeechSynthesisAsync(text, string.Empty, token);
 		}
 		catch (Exception ex)
 		{
-			_logger.LogWarning("Exception: {Message}", ex.Message);
+			LogException(ex.Message);	//TODO:better logging
 			return false;
 		}
 		return true;
@@ -252,26 +237,32 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await _client.SpeechSyntheses.PostAndWaitAsync(
-				new()
-				{
-					Text = text,
-					ForceEnqueue = true,
-					Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
-					VoiceName = LastCast.Name.ToString(),
-					VoiceVersion = LastCast.Version,
-					Language = LastCast.Language,
-				},
-				TimeSpan.FromMinutes(5),
-				ctx: token ?? CancellationToken.None
-			);
+			var result = await ProcessSpeechSynthesisAsync(text, analyzedText, token);
 			return result?.ToSpeakResult(analyzedText) ?? default;
 		}
 		catch (Exception ex)
 		{
-			_logger.LogWarning($"Exception: {ex.Message}");
+			LogException(ex.Message); //TODO:better logging
 			throw;
 		}
+	}
+
+	async Task<Internal.SpeechSyntheses.Item.WithUuGetResponse?> ProcessSpeechSynthesisAsync(string text, string analyzedText, CancellationToken? token)
+	{
+		return await _client.SpeechSyntheses.PostAndWaitAsync(
+			new()
+			{
+				Text = text,
+				AnalyzedText = analyzedText,
+				ForceEnqueue = true,
+				Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
+				VoiceName = LastCast.Name.ToString(),
+				VoiceVersion = LastCast.Version,
+				Language = LastCast.Language.ToString(),
+			},
+			TimeSpan.FromMinutes(5),
+			ctx: token ?? CancellationToken.None
+		);
 	}
 
 	protected virtual void Dispose(bool disposing)
@@ -286,6 +277,8 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 			// TODO: アンマネージド リソース (アンマネージド オブジェクト) を解放し、ファイナライザーをオーバーライドします
 			// TODO: 大きなフィールドを null に設定します
+			VoiceByDisplay.Clear();
+			VoiceByName.Clear();
 			_disposedValue = true;
 		}
 	}

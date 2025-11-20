@@ -2,6 +2,7 @@ using Xunit.Abstractions;
 using SonaBridge.Core.Rest;
 using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CoreRestTest;
 
@@ -88,6 +89,7 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 	}
 }
 
+[SuppressMessage("Design", "MA0048:File name must match type name", Justification = "<保留中>")]
 public class RestServiceFixture : IDisposable, IAsyncLifetime
 {
 	bool _disposedValue;
