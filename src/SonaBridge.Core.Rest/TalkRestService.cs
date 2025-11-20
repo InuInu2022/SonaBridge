@@ -166,7 +166,6 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0002:IEqualityComparer<string> or IComparer<string> is missing", Justification = "<保留中>")]
 	public async Task<ReadOnlyDictionary<string, double>> GetStylesAsync(string voiceName)
 	{
-		//throw new NotImplementedException();
 		if (!VoiceByDisplay.TryGetValue(new(voiceName), out var voice)
 		|| !VoiceByName.TryGetValue(voice, out var voiceData))
 		{
@@ -176,8 +175,6 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		var result = await _client
 			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault() ?? "2.0.0"]
 			.GetAsync();
-
-		Dictionary<string, double> globalParams = new(StringComparer.Ordinal);
 
 		var weights = result?.DefaultStyleWeights ?? [];
 		var names = result?.StyleNames ?? [];
@@ -253,7 +250,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await ProcessSpeechSynthesisAsync(text, string.Empty, token);
+			var result = await SpeakCoreAsync(text, string.Empty, token);
 		}
 		catch (Exception ex)
 		{
@@ -272,7 +269,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	{
 		try
 		{
-			var result = await ProcessSpeechSynthesisAsync(text, analyzedText, token);
+			var result = await SpeakCoreAsync(text, analyzedText, token);
 			return result?.ToSpeakResult(analyzedText) ?? default;
 		}
 		catch (Exception ex)
@@ -282,23 +279,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		}
 	}
 
-	async Task<Internal.SpeechSyntheses.Item.WithUuGetResponse?> ProcessSpeechSynthesisAsync(string text, string analyzedText, CancellationToken? token)
-	{
-		return await _client.SpeechSyntheses.PostAndWaitAsync(
-			new()
-			{
-				Text = text,
-				AnalyzedText = analyzedText,
-				ForceEnqueue = true,
-				Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
-				VoiceName = LastCast.Name.ToString(),
-				VoiceVersion = LastCast.Version,
-				Language = LastCast.Language.ToString(),
-			},
-			TimeSpan.FromMinutes(5),
-			ctx: token ?? CancellationToken.None
-		);
-	}
+
 
 	protected virtual void Dispose(bool disposing)
 	{
