@@ -111,6 +111,43 @@ public partial class TalkRestService
 				: string.Empty;
 	}
 
+	void UpdateLastCast(CastData newCast)
+	{
+		LastCast = newCast;
+
+		LastCasts.AddOrUpdate(
+			newCast.Name,
+			addValueFactory: _ => newCast,
+			updateValueFactory: (_, _) => newCast
+		);
+	}
+
+	async ValueTask<IList<double?>> GetDefaultStyleWeightsAsync(
+		VoiceNameKey vName, VersionKey vVersion
+	)
+	{
+		var result = await GetDefaultStylesCoreAsync(vName, vVersion);
+		return result?
+			.DefaultStyleWeights?
+			.ToList() ?? [];
+	}
+
+	async ValueTask<IList<string>> GetDefaultStyleNamesAsync(
+		VoiceNameKey vName,
+		VersionKey vVersion
+	)
+	{
+		var result = await GetDefaultStylesCoreAsync(vName, vVersion);
+		return result?.StyleNames ?? [];
+	}
+
+	async Task<Internal.Voices.Item.Item.WithVoice_versionGetResponse?> GetDefaultStylesCoreAsync(VoiceNameKey vName, VersionKey vVersion)
+	{
+		return await _client
+			.Voices[vName.ToString()][vVersion.ToString()]
+			.GetAsync();
+	}
+
 	/// <summary>
 	/// 喋りを実行する内部関数
 	/// 音声は出力デバイスから再生されます

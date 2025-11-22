@@ -67,20 +67,19 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		ArgumentException.ThrowIfNullOrEmpty(password);
 		ArgumentException.ThrowIfNullOrEmpty(language);
 
-		AuthProvider = new BasicAuthenticationProvider(user, password);
-		Adapter = new HttpClientRequestAdapter(AuthProvider)
+		AuthProvider = new(user, password);
+		Adapter = new(AuthProvider)
 		{
 			BaseUrl = $"""http://localhost:{port}/api/talk/v1""",
 		};
 		LastLanguage = new(language);
 
-		LastCast = new CastData(
+		UpdateLastCast(new CastData(
 			new("tanaka-san_ja_JP"),
 			new("2.0.1"),
 			LastLanguage,
 			new()
-		);
-		LastCasts.TryAdd(LastCast.Name, LastCast);
+		));
 
 		_client = new RawTalkApi(Adapter);
 		_logger = logger ?? NullLogger<TalkRestService>.Instance;
@@ -124,7 +123,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		//ライブラリ情報取得更新
 		if (updateLibrary && !await instance.TryUpdateLibraryAsync())
 		{
-			instance._logger.LogWarning("Failed to update voice library.");
+			instance.LogWarning("Failed to update voice library!");
 		}
 
 		return instance;
@@ -168,9 +167,10 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return Task.FromResult(name);
 	}
 
-	public async Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
+	public Task<ReadOnlyDictionary<string, double>> GetGlobalParamsAsync()
 	{
-		throw new NotImplementedException();
+		var dict = LastCast.GlobalParameters.ToDictionary();
+		return Task.FromResult(dict);
 	}
 
 	[Obsolete("REST APIではサポートされていません。")]
@@ -185,32 +185,34 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		if (!VoiceByDisplay.TryGetValue(new(voiceName), out var voice)
 		|| !VoiceByName.TryGetValue(voice, out var voiceData))
 		{
-			LogWarning($"Voice '{voiceName}' not found in internal database.");
+			LogCastNotFound(voiceName);
 			return new Dictionary<string, double>().AsReadOnly();
 		}
 
-		var result = await _client
-			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault().ToString()]
-			.GetAsync();
+		var result = await GetDefaultStylesCoreAsync(
+			voiceData.VoiceName,
+			voiceData.VoiceVersions.FirstOrDefault()
+		);
 
 		if (voiceData.StyleNames is null or { Count: 0 }
 		|| !voiceData.StyleNames.ContainsKey(voiceData.VoiceVersions.FirstOrDefault()))
 		{
 			voiceData.StyleNames?.AddOrReplace(
 				voiceData.VoiceVersions.FirstOrDefault(),
-				result?.StyleNames?.ToArray() ?? []
+				[.. result?.StyleNames ?? []]
 			);
 		}
 
 
-		var hasStyle = LastCast.GlobalParameters.StyleWeights?.SequenceEqual(result?.DefaultStyleWeights ?? []) == false;
+		var hasStyle = LastCast.GlobalParameters.StyleWeights?
+			.SequenceEqual(result?.DefaultStyleWeights ?? []) == false;
 
 		if (!hasStyle)
 		{
-			LastCast = LastCast with
+			UpdateLastCast(LastCast with
 			{
 				GlobalParameters = new(StyleWeights: result?.DefaultStyleWeights ?? []),
-			};
+			});
 		}
 
 		var weights = hasStyle
@@ -265,22 +267,25 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			if (LastCasts.TryGetValue(
 				cast.VoiceName, out var existingCast))
 			{
-				LastCast = existingCast;
+				UpdateLastCast(existingCast);
 			}
 			else
 			{
 				//キャッシュに無いなら初期Weight取得
-				var result = await _client.Voices[cast.VoiceName.ToString()][cast.VoiceVersions.FirstOrDefault().ToString()]
-					.GetAsync();
-				LastCasts.TryAdd(cast.VoiceName, new
+				var result = await GetDefaultStyleWeightsAsync(
+					cast.VoiceName,
+					cast.VoiceVersions.FirstOrDefault()
+				);
+				var newCast = new CastData
 				(
 					cast.VoiceName,
 					cast.VoiceVersions.FirstOrDefault(),
 					LastLanguage,
 					new(
-						StyleWeights: result?.DefaultStyleWeights
+						StyleWeights: result
 					)
-				));
+				);
+				UpdateLastCast(newCast);
 			}
 		}
 		else
@@ -290,9 +295,28 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	}
 
 
-	public ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
+	public async ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
 	{
-		throw new NotImplementedException();
+		//throw new NotImplementedException();
+
+		var lastStyles = LastCast.GlobalParameters.StyleWeights
+			?? await GetDefaultStyleWeightsAsync(
+				LastCast.Name,
+				LastCast.Version
+			);
+
+		_ = globalParams.TryGetValue("ALP", out var alpha);
+
+		var param = new GlobalParameters(
+			Alp: alpha,
+			StyleWeights: lastStyles
+		);
+
+		UpdateLastCast(LastCast with
+		{
+			GlobalParameters = param,
+		});
+
 	}
 
 	[Obsolete("REST APIではサポートされていません。")]
@@ -314,13 +338,17 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			//todo: 既存設定を上書きするようにする
 			//VoiceDataにスタイルの名称順が記録されているのでそれに合わせてweightsを設定する
 			//impl.csの方に共通関数化しておくべきかも
-			LastCast = LastCast with
+			UpdateLastCast(LastCast with
 			{
 				GlobalParameters = LastCast.GlobalParameters with
 				{
 					StyleWeights = [.. x],
 				},
-			};
+			});
+		}
+		else
+		{
+			LogCastNotFound(voiceName);
 		}
 		return ValueTask.CompletedTask;
 	}
@@ -340,7 +368,14 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	}
 
 
-
+	/// <summary>
+	/// 調整したパラメータで喋らせる
+	/// 調整可能：読み、アクセント
+	/// </summary>
+	/// <param name="text"></param>
+	/// <param name="analyzedText"></param>
+	/// <param name="token"></param>
+	/// <returns></returns>
 	public async Task<SpeakResult> SpeakAsync(
 		string text,
 		string analyzedText,
@@ -374,6 +409,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			// TODO: 大きなフィールドを null に設定します
 			VoiceByDisplay.Clear();
 			VoiceByName.Clear();
+			LastCasts.Clear();
 			_disposedValue = true;
 		}
 	}
