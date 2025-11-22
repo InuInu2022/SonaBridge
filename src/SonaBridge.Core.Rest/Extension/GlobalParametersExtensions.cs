@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics.CodeAnalysis;
 
 using SonaBridge.Core.Rest.Internal.Models;
@@ -12,7 +13,8 @@ public static class GlobalParametersExtensions
 
 	extension(GlobalParameters gParams)
 	{
-		public Speech_synthesis_global_parameters ToSsGp()
+		public Speech_synthesis_global_parameters
+		ToSsGp()
 		{
 			return new Speech_synthesis_global_parameters
 			{
@@ -25,6 +27,39 @@ public static class GlobalParametersExtensions
 				Volume = gParams.Volume,
 				AdditionalData = gParams.AdditionalData,
 			};
+		}
+
+		public ReadOnlyDictionary<string, double>
+		ToDictionary()
+		{
+			var dict = new Dictionary<string, double>(StringComparer.OrdinalIgnoreCase);
+
+			if (gParams.Alp.HasValue)
+			{
+				dict["ALP"] = gParams.Alp.Value;
+			}
+			if (gParams.Huskiness.HasValue)
+			{
+				dict["HUS"] = gParams.Huskiness.Value;
+			}
+			if (gParams.Intonation.HasValue)
+			{
+				dict["INTO"] = gParams.Intonation.Value;
+			}
+			if (gParams.Pitch.HasValue)
+			{
+				dict["PIT"] = gParams.Pitch.Value;
+			}
+			if (gParams.Speed.HasValue)
+			{
+				dict["SPD"] = gParams.Speed.Value;
+			}
+			if (gParams.Volume.HasValue)
+			{
+				dict["VOL"] = gParams.Volume.Value;
+			}
+
+			return new ReadOnlyDictionary<string, double>(dict);
 		}
 	}
 	extension(Speech_synthesis_global_parameters ssParams)
