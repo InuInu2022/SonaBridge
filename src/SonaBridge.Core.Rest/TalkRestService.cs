@@ -74,7 +74,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		};
 		LastLanguage = new(language);
 
-		UpdateLastCast(new CastData(
+		UpdateLastCast(new(
 			new("tanaka-san_ja_JP"),
 			new("2.0.1"),
 			LastLanguage,
@@ -297,7 +297,6 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public async ValueTask SetGlobalParamsAsync(IDictionary<string, double> globalParams)
 	{
-		//throw new NotImplementedException();
 
 		var lastStyles = LastCast.GlobalParameters.StyleWeights
 			?? await GetDefaultStyleWeightsAsync(
