@@ -188,9 +188,10 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 		LastCast = LastCast with
 		{
-			GlobalParameters = new(
-				StyleWeights: result?.DefaultStyleWeights ?? []
-			),
+			GlobalParameters = LastCast.GlobalParameters with
+			{
+				StyleWeights = result?.DefaultStyleWeights ?? []
+			},
 		};
 
 		var weights = result?.DefaultStyleWeights ?? [];
@@ -240,12 +241,12 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		if (VoiceByDisplay.TryGetValue(new(castName), out var id)
 		&& VoiceByName.TryGetValue(id, out var cast))
 		{
-			LastCast = new(
-				cast.VoiceName,
-				cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
-				LastLanguage,
-				default
-			);
+			LastCast = LastCast with
+			{
+				Name = cast.VoiceName,
+				Version = cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
+				Language = LastLanguage
+			};
 		}
 		else
 		{
