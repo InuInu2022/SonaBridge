@@ -23,54 +23,92 @@ public partial class TalkRestService
 			if (x.VoiceVersion is null)
 				return;
 
-			var appendVoice = new VoiceData(
-				VoiceName: new(x.VoiceName),
-				VoiceVersions: [new(x.VoiceVersion)],
-				Languages: x.Languages is { } langs
-					? new()
-					{
-						{ new VersionKey(x.VoiceVersion),
-						[.. langs.Select(ln => new LanguageKey(ln))] },
-					}
-					: [],
-				DisplayNames: x.DisplayName?.Where(v => v is { Name: not null, Language: not null })
-					.ToList()
-					.ToDictionary(v => new LanguageKey(v.Language!), v => v.Name!) ?? [],
-				StyleNames: []
-			);
+			//VoiceByNameの更新
+			AddOrUpdateVoiceByName(x);
 
-			_ = VoiceByName.AddOrUpdate(
-				new(x.VoiceName),
-				addValueFactory: _ => appendVoice,
-				updateValueFactory: (_, oldValue) =>
-				{
-					var versions = x.VoiceVersion is { } newVer
-						? [.. oldValue.VoiceVersions, new VersionKey(newVer)]
-						: oldValue.VoiceVersions;
-					if (x.Languages is not null)
-					{
-						oldValue.Languages.TryAdd(
-							new(x.VoiceVersion),
-							[.. x.Languages.Select(l => new LanguageKey(l))]
-						);
-					}
-					return oldValue with
-					{
-						VoiceVersions = [.. versions.Distinct()],
-					};
-				}
-			);
-
-			if (x.DisplayName?.FirstOrDefault()?.Name is not { } name)
-				return;
-			_ = VoiceByDisplay.AddOrUpdate(
-				new(name),
-				addValueFactory: _ => new(x.VoiceName),
-				updateValueFactory: (_, oldValue) => oldValue
-			);
+			//VoiceByDisplayの更新
+			AddOrUpdateVoiceByDisplay(x);
 		});
 
 		return true;
+	}
+
+	static void AddOrUpdateVoiceByName(
+		Internal.Models.Voice_base_information vInfo)
+	{
+		if(vInfo.VoiceName is null) return;
+		if(vInfo.VoiceVersion is null) return;
+
+		var appendVoice = new VoiceData(
+			VoiceName: new(vInfo.VoiceName),
+			VoiceVersions: [new(vInfo.VoiceVersion)],
+			Languages: vInfo.Languages is { } langs
+				? new()
+				{
+						{ new VersionKey(vInfo.VoiceVersion),
+						[.. langs.Select(ln => new LanguageKey(ln))] },
+				}
+				: [],
+			DisplayNames: vInfo.DisplayName?.Where(v => v is { Name: not null, Language: not null })
+				.ToList()
+				.ToDictionary(v => new LanguageKey(v.Language!), v => v.Name!) ?? [],
+			StyleNames: []
+		);
+
+		_ = VoiceByName.AddOrUpdate(
+			new(vInfo.VoiceName),
+			addValueFactory: _ => appendVoice,
+			updateValueFactory: (_, oldValue) =>
+			{
+				var versions = vInfo.VoiceVersion is { } newVer
+					? [.. oldValue.VoiceVersions, new VersionKey(newVer)]
+					: oldValue.VoiceVersions;
+				if (vInfo.Languages is not null)
+				{
+					oldValue.Languages.TryAdd(
+						new(vInfo.VoiceVersion),
+						[.. vInfo.Languages.Select(l => new LanguageKey(l))]
+					);
+				}
+				return oldValue with
+				{
+					VoiceVersions = [.. versions.Distinct()],
+				};
+			}
+		);
+	}
+
+	static void AddOrUpdateVoiceByDisplay(
+		Internal.Models.Voice_base_information vInfo)
+	{
+		if (vInfo.DisplayName?.FirstOrDefault()?.Name is not { } name) return;
+		if (vInfo.VoiceName is not { } vName) return;
+
+		_ = VoiceByDisplay.AddOrUpdate(
+			new(name),
+			addValueFactory: _ => new(vName),
+			updateValueFactory: (_, oldValue) => oldValue
+		);
+	}
+
+	/// <summary>
+	/// 音声ライブラリ表示名を取得します
+	/// </summary>
+	/// <param name="voiceNameKey">音声ライブラリ内部名キー</param>
+	/// <param name="language">言語キー</param>
+	/// <returns>音声ライブラリ表示名</returns>
+	static string GetVoiceDisplayName(
+		VoiceNameKey voiceNameKey,
+		LanguageKey? language = null
+	)
+	{
+		language ??= new("ja_JP");
+		return language is not LanguageKey lang
+			? string.Empty
+			: VoiceByName.TryGetValue(voiceNameKey, out var voiceData)
+			&& voiceData.DisplayNames.TryGetValue(lang, out var castName)
+				? castName
+				: string.Empty;
 	}
 
 	/// <summary>

@@ -42,8 +42,13 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	/// </summary>
 	static ConcurrentDictionary<VoiceDisplayKey, VoiceNameKey> VoiceByDisplay { get; set; } = [];
 
-	static ConcurrentDictionary<VoiceNameKey, string> StylesByName { get;set;} = [];
 	CastData LastCast { get; set; }
+
+	/// <summary>
+	/// 直近に使用した音声ライブラリの情報キャッシュ
+	/// ボイスライブラリ毎にデータを持つ
+	/// </summary>
+	static ConcurrentDictionary<VoiceNameKey, CastData> LastCasts { get; set; } = [];
 
 	readonly ILogger<TalkRestService> _logger;
 	readonly RawTalkApi _client;
@@ -69,12 +74,13 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		};
 		LastLanguage = new(language);
 
-		LastCast = new
-			(new("tanaka-san_ja_JP"),
+		LastCast = new CastData(
+			new("tanaka-san_ja_JP"),
 			new("2.0.1"),
 			LastLanguage,
 			new()
 		);
+		LastCasts.TryAdd(LastCast.Name, LastCast);
 
 		_client = new RawTalkApi(Adapter);
 		_logger = logger ?? NullLogger<TalkRestService>.Instance;
@@ -158,10 +164,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public Task<string> GetCastAsync()
 	{
-		var name = VoiceByName.TryGetValue(LastCast.Name, out var voiceData)
-			&& voiceData.DisplayNames.TryGetValue(LastLanguage, out var castName)
-			? castName
-			: string.Empty;
+		var name = GetVoiceDisplayName(LastCast.Name, LastLanguage);
 		return Task.FromResult(name);
 	}
 
@@ -254,23 +257,36 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return true;
 	}
 
-	public ValueTask SetCastAsync(string castName)
+	public async ValueTask SetCastAsync(string castName)
 	{
 		if (VoiceByDisplay.TryGetValue(new(castName), out var id)
 		&& VoiceByName.TryGetValue(id, out var cast))
 		{
-			LastCast = new(
-				cast.VoiceName,
-				cast.VoiceVersions.FirstOrDefault(),
-				LastLanguage,
-				default
-			);
+			if (LastCasts.TryGetValue(
+				cast.VoiceName, out var existingCast))
+			{
+				LastCast = existingCast;
+			}
+			else
+			{
+				//キャッシュに無いなら初期Weight取得
+				var result = await _client.Voices[cast.VoiceName.ToString()][cast.VoiceVersions.FirstOrDefault().ToString()]
+					.GetAsync();
+				LastCasts.TryAdd(cast.VoiceName, new
+				(
+					cast.VoiceName,
+					cast.VoiceVersions.FirstOrDefault(),
+					LastLanguage,
+					new(
+						StyleWeights: result?.DefaultStyleWeights
+					)
+				));
+			}
 		}
 		else
 		{
 			LogCastNotFound(castName);
 		}
-		return ValueTask.CompletedTask;
 	}
 
 
