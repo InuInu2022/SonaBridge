@@ -101,6 +101,20 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 		Assert.Equal(count, result.Count);
 		Assert.All(result.Values, value => Assert.InRange(value, 0.0, 1.0));
 	}
+
+	[Theory]
+	[InlineData("さとうささら")]
+	public async Task SetStyle(string castName)
+	{
+		Assert.NotNull(fixture.Service);
+		await fixture.Service.SetStylesAsync(castName,
+			new Dictionary<string, double>
+			{
+				{ "Fine", 0.8 },
+				{ "Angry", 0.2 },
+			}
+		);
+	}
 }
 
 [SuppressMessage("Design", "MA0048:File name must match type name", Justification = "<保留中>")]

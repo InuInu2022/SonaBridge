@@ -25,16 +25,18 @@ public partial class TalkRestService
 
 			var appendVoice = new VoiceData(
 				VoiceName: new(x.VoiceName),
-				VoiceVersions: [x.VoiceVersion],
+				VoiceVersions: [new(x.VoiceVersion)],
 				Languages: x.Languages is { } langs
-					? new(StringComparer.Ordinal)
+					? new()
 					{
-						{ x.VoiceVersion, [.. langs.Select(ln => new LanguageKey(ln))] },
+						{ new VersionKey(x.VoiceVersion),
+						[.. langs.Select(ln => new LanguageKey(ln))] },
 					}
 					: [],
 				DisplayNames: x.DisplayName?.Where(v => v is { Name: not null, Language: not null })
 					.ToList()
-					.ToDictionary(v => new LanguageKey(v.Language!), v => v.Name!) ?? []
+					.ToDictionary(v => new LanguageKey(v.Language!), v => v.Name!) ?? [],
+				StyleNames: []
 			);
 
 			_ = VoiceByName.AddOrUpdate(
@@ -43,18 +45,18 @@ public partial class TalkRestService
 				updateValueFactory: (_, oldValue) =>
 				{
 					var versions = x.VoiceVersion is { } newVer
-						? [.. oldValue.VoiceVersions, newVer]
+						? [.. oldValue.VoiceVersions, new VersionKey(newVer)]
 						: oldValue.VoiceVersions;
 					if (x.Languages is not null)
 					{
 						oldValue.Languages.TryAdd(
-							x.VoiceVersion,
+							new(x.VoiceVersion),
 							[.. x.Languages.Select(l => new LanguageKey(l))]
 						);
 					}
 					return oldValue with
 					{
-						VoiceVersions = [.. versions.Distinct(StringComparer.Ordinal)],
+						VoiceVersions = [.. versions.Distinct()],
 					};
 				}
 			);
@@ -93,7 +95,7 @@ public partial class TalkRestService
 			//音声デバイスから
 			Destination = SpeechSynthesesPostRequestBody_destination.Audio_device,
 			VoiceName = LastCast.Name.ToString(),
-			VoiceVersion = LastCast.Version,
+			VoiceVersion = LastCast.Version.ToString(),
 			Language = LastCast.Language.ToString(),
 			GlobalParameters = LastCast.GlobalParameters.ToSsGp(),
 		},

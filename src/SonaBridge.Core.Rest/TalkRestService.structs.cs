@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Runtime.InteropServices;
 
 using SonaBridge.Core.Rest.Models;
 
@@ -12,9 +13,11 @@ public partial class TalkRestService
 	/// <param name="Name"></param>
 	/// <param name="Version"></param>
 	/// <param name="Language"></param>
+	/// <param name="GlobalParameters"></param>
+	[StructLayout(LayoutKind.Auto)]
 	readonly record struct CastData(
 		VoiceNameKey Name,
-		string Version,
+		VersionKey Version,
 		LanguageKey Language,
 		GlobalParameters GlobalParameters
 	);
@@ -30,12 +33,15 @@ public partial class TalkRestService
 	/// <param name="DisplayNames">音声ライブラリ表示名一覧
 	/// キー: 言語コード、値: 表示名(e.g. "田中傘")
 	/// </param>
+	/// <param name="StyleNames">音声スタイル名一覧
+	/// キー: バージョン、値: スタイル表示名(e.g. "元気な")の一覧</param>
 	/// <seealso cref="VoiceByName"/>
 	readonly record struct VoiceData(
 		VoiceNameKey VoiceName,
-		string[] VoiceVersions,
-		Dictionary<string, LanguageKey[]> Languages,
-		Dictionary<LanguageKey, string> DisplayNames
+		VersionKey[] VoiceVersions,
+		Dictionary<VersionKey, LanguageKey[]> Languages,
+		Dictionary<LanguageKey, string> DisplayNames,
+		Dictionary<VersionKey, string[]>? StyleNames
 	);
 
 	/// <summary>
@@ -79,4 +85,12 @@ public partial class TalkRestService
 		public static bool operator !=(string? left, LanguageKey right) =>
 			!string.Equals(left, right.Language, StringComparison.Ordinal);
 	}
+
+	readonly record struct VersionKey(string VersionString)
+	{
+		public override string ToString() => VersionString;
+		public Version ToVersion() =>
+			Version.TryParse(VersionString, out var version)
+				? version : new Version(0, 0);
+	};
 }

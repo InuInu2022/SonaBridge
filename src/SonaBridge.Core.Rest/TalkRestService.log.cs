@@ -19,4 +19,7 @@ public partial class TalkRestService
 		Level = LogLevel.Error,
 		Message = "Exception: {ExMessage}")]
 	partial void LogException(string exMessage);
+
+	[LoggerMessage(Level = LogLevel.Warning, Message = "{message}")]
+	partial void LogWarning(string message);
 }

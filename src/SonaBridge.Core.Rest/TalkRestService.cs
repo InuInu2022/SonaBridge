@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Kiota.Abstractions.Authentication;
+using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 
 using SonaBridge.Core.Common;
@@ -40,6 +41,8 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	/// 音声ライブラリ表示名(e.g. "田中傘")をキーとする変換キャッシュテーブル
 	/// </summary>
 	static ConcurrentDictionary<VoiceDisplayKey, VoiceNameKey> VoiceByDisplay { get; set; } = [];
+
+	static ConcurrentDictionary<VoiceNameKey, string> StylesByName { get;set;} = [];
 	CastData LastCast { get; set; }
 
 	readonly ILogger<TalkRestService> _logger;
@@ -68,7 +71,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 		LastCast = new
 			(new("tanaka-san_ja_JP"),
-			"2.0.1",
+			new("2.0.1"),
 			LastLanguage,
 			new()
 		);
@@ -179,21 +182,37 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		if (!VoiceByDisplay.TryGetValue(new(voiceName), out var voice)
 		|| !VoiceByName.TryGetValue(voice, out var voiceData))
 		{
+			LogWarning($"Voice '{voiceName}' not found in internal database.");
 			return new Dictionary<string, double>().AsReadOnly();
 		}
 
 		var result = await _client
-			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault() ?? "2.0.0"]
+			.Voices[voiceData.VoiceName.ToString()][voiceData.VoiceVersions.FirstOrDefault().ToString()]
 			.GetAsync();
 
-		LastCast = LastCast with
+		if (voiceData.StyleNames is null or { Count: 0 }
+		|| !voiceData.StyleNames.ContainsKey(voiceData.VoiceVersions.FirstOrDefault()))
 		{
-			GlobalParameters = new(
-				StyleWeights: result?.DefaultStyleWeights ?? []
-			),
-		};
+			voiceData.StyleNames?.AddOrReplace(
+				voiceData.VoiceVersions.FirstOrDefault(),
+				result?.StyleNames?.ToArray() ?? []
+			);
+		}
 
-		var weights = result?.DefaultStyleWeights ?? [];
+
+		var hasStyle = LastCast.GlobalParameters.StyleWeights?.SequenceEqual(result?.DefaultStyleWeights ?? []) == false;
+
+		if (!hasStyle)
+		{
+			LastCast = LastCast with
+			{
+				GlobalParameters = new(StyleWeights: result?.DefaultStyleWeights ?? []),
+			};
+		}
+
+		var weights = hasStyle
+			? LastCast.GlobalParameters.StyleWeights!
+			: result?.DefaultStyleWeights ?? [];
 		var names = result?.StyleNames ?? [];
 		return names
 			.Zip(weights, (k, v) => (k, v: v ?? 0.0))
@@ -212,7 +231,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 					ForceEnqueue = true,
 					Destination = SpeechSynthesesPostRequestBody_destination.File,
 					VoiceName = LastCast.Name.ToString(),
-					VoiceVersion = LastCast.Version,
+					VoiceVersion = LastCast.Version.ToString(),
 					Language = LastCast.Language.ToString(),
 					OutputFilePath = path,
 					CanOverwriteFile = true,
@@ -242,7 +261,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		{
 			LastCast = new(
 				cast.VoiceName,
-				cast.VoiceVersions.FirstOrDefault() ?? "2.0.0",
+				cast.VoiceVersions.FirstOrDefault(),
 				LastLanguage,
 				default
 			);
@@ -268,7 +287,26 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	public ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
 	{
-		throw new NotImplementedException();
+		if (
+			VoiceByDisplay.TryGetValue(new(voiceName), out var id)
+			&& VoiceByName.TryGetValue(id, out var cast)
+		)
+		{
+			var x = styles
+				.OrderBy(kv => kv.Key, StringComparer.Ordinal)
+				.Select(static kv => kv.Value);
+			//todo: 既存設定を上書きするようにする
+			//VoiceDataにスタイルの名称順が記録されているのでそれに合わせてweightsを設定する
+			//impl.csの方に共通関数化しておくべきかも
+			LastCast = LastCast with
+			{
+				GlobalParameters = LastCast.GlobalParameters with
+				{
+					StyleWeights = [.. x],
+				},
+			};
+		}
+		return ValueTask.CompletedTask;
 	}
 
 	public async Task<bool> SpeakAsync(string text, CancellationToken? token = null)
