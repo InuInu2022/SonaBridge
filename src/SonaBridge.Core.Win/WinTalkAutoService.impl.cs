@@ -50,6 +50,17 @@ public partial class WinTalkAutoService : ITalkAutoService
 		*/
 	}
 
+	internal async Task InternalStartUpAsync()
+	{
+		await GetAppWindowAsync().ConfigureAwait(false);
+		_win?.SetForeground();
+		await _win.WaitUntilEnabledAsync().ConfigureAwait(false);
+		WinCommon.SaveMousePoint();
+		WinCommon.MoveMouseCorner();
+		await PrepareAppAsync().ConfigureAwait(false);
+		await WinCommon.RestoreMousePointAsync().ConfigureAwait(false);
+	}
+
 	/// <summary>
 	/// 事前に設定しておく
 	///  - ボイス切替の高速化のためすべてのボイスのトラックを用意しておく
