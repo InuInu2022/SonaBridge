@@ -225,6 +225,57 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 			.AsReadOnly();
 	}
 
+	public async Task<ReadOnlyCollection<PhonemeData>> GetPhonemesAsync(string text)
+	{
+		var tempPath = Path.Combine(Path.GetTempPath(), Path.GetTempFileName());
+		var result = await _client.SpeechSyntheses.PostAndWaitAsync(
+			new()
+			{
+				Text = text,
+				ForceEnqueue = true,
+				Destination = SpeechSynthesesPostRequestBody_destination.File,
+				VoiceName = LastCast.Name.ToString(),
+				VoiceVersion = LastCast.Version.ToString(),
+				Language = LastCast.Language.ToString(),
+				OutputFilePath = tempPath,
+				CanOverwriteFile = true,
+				GlobalParameters = LastCast.GlobalParameters.ToSsGp(),
+			},
+			TimeSpan.FromMinutes(5),
+			ctx: CancellationToken.None
+		);
+
+		try
+		{
+			if (File.Exists(tempPath))
+			{
+				File.Delete(tempPath);
+			}
+		}
+		catch (Exception ex)
+		{
+			LogException(ex.Message); //TODO:better logging
+		}
+
+		var phonemes = result?.Phonemes ?? [];
+		var durations = result?.PhonemeDurations ?? [];
+		var analyzed = result?.AnalyzedText;
+		var merged = result?.Phonemes?
+			.Zip(
+				durations,
+				(p, d) => (phoneme: p, duration: d)
+			) ?? [];
+
+		var total = 0.0;
+		List<PhonemeData> phonemeDataList = [];
+		foreach (var (p, d) in merged)
+		{
+			phonemeDataList.Add(new(total, total + d ?? 0.0, p));
+			total += d ?? 0.0;
+		}
+		return phonemeDataList.AsReadOnly();
+	}
+
 	public async Task<bool> OutputWaveToFileAsync(string text, string path)
 	{
 		try
