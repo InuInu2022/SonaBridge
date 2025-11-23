@@ -324,24 +324,79 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		throw new NotSupportedException("REST APIではサポートされていません。");
 	}
 
-	public ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
+	public async ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
 	{
+		// 空なら何もしない
+		if (styles is null or { Count: 0 })
+		{
+			return;
+		}
+
 		if (
 			VoiceByDisplay.TryGetValue(new(voiceName), out var id)
 			&& VoiceByName.TryGetValue(id, out var cast)
 		)
 		{
-			var x = styles
-				.OrderBy(kv => kv.Key, StringComparer.Ordinal)
-				.Select(static kv => kv.Value);
-			//todo: 既存設定を上書きするようにする
-			//VoiceDataにスタイルの名称順が記録されているのでそれに合わせてweightsを設定する
-			//impl.csの方に共通関数化しておくべきかも
+			var version = cast.VoiceVersions.FirstOrDefault();
+
+			// スタイル名称順取得（キャッシュ → API）
+			List<string>? styleNames = null;
+			if (cast.StyleNames is not null
+				&& cast.StyleNames.TryGetValue(version, out var cachedNames))
+			{
+				styleNames = [.. cachedNames];
+			}
+			else
+			{
+				var defaultStyles = await GetDefaultStylesCoreAsync(cast.VoiceName, version);
+				styleNames = defaultStyles?.StyleNames ?? [];
+				cast.StyleNames?
+					.AddOrReplace(version, [.. styleNames]);
+
+				// LastCast が対象キャストで weights 未初期化なら初期化
+				if (LastCast.Name == cast.VoiceName
+					&& LastCast.GlobalParameters.StyleWeights is null or []
+					&& defaultStyles?.DefaultStyleWeights is not null)
+				{
+					UpdateLastCast(LastCast with
+					{
+						GlobalParameters = LastCast.GlobalParameters with
+						{
+							StyleWeights = [.. defaultStyles.DefaultStyleWeights],
+						},
+					});
+				}
+			}
+
+			// 既存 weights（不整合ならデフォルト再取得）
+			var existing = LastCast.GlobalParameters.StyleWeights;
+			if (existing is null
+				|| existing.Count != styleNames.Count)
+			{
+				var defaults = await GetDefaultStyleWeightsAsync(cast.VoiceName, version);
+				existing = defaults ?? Array.Empty<double?>();
+			}
+
+			// 可変コピー
+			var newWeights = existing
+				.Select(w => w ?? 0.0)
+				.ToArray();
+
+			// 上書き適用（未知スタイルは無視）
+			foreach (var kv in styles)
+			{
+				var idx = styleNames.IndexOf(kv.Key);
+				if (idx >= 0 && idx < newWeights.Length)
+				{
+					newWeights[idx] = kv.Value;
+				}
+			}
+
 			UpdateLastCast(LastCast with
 			{
 				GlobalParameters = LastCast.GlobalParameters with
 				{
-					StyleWeights = [.. x],
+					StyleWeights = [.. newWeights],
 				},
 			});
 		}
@@ -349,7 +404,6 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		{
 			LogCastNotFound(voiceName);
 		}
-		return ValueTask.CompletedTask;
 	}
 
 	public async Task<bool> SpeakAsync(string text, CancellationToken? token = null)
