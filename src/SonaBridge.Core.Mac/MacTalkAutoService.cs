@@ -54,6 +54,11 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public Task<ReadOnlyCollection<PhonemeData>> GetPhonemesAsync(string text)
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<bool> SpeakAsync(string text, CancellationToken? token = null)
 	{
 		throw new NotSupportedException();
@@ -97,4 +102,6 @@ public class MacTalkAutoService : ITalkAutoService
 		Dispose(disposing: true);
 		GC.SuppressFinalize(this);
 	}
+
+
 }
