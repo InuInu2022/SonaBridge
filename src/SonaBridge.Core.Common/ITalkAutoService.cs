@@ -1,3 +1,5 @@
+using System.Collections.ObjectModel;
+
 namespace SonaBridge.Core.Common;
 
 public partial interface ITalkAutoService : IAutoService, IDisposable
@@ -19,7 +21,7 @@ public partial interface ITalkAutoService : IAutoService, IDisposable
 	/// <remarks>
 	/// FluentCeVIOWrapper互換（<see cref="FluentCeVIO.GetAvailableCastsAsync()" />）
 	/// </remarks>
-	/// <returns></returns>
+	/// <returns>利用可能なキャスト名の配列</returns>
 	Task<string[]> GetAvailableCastsAsync();
 
 	/// <summary>
@@ -33,9 +35,8 @@ public partial interface ITalkAutoService : IAutoService, IDisposable
 	/// キャスト(話者)を設定します。
 	/// </summary>
 	/// <param name="castName">キャスト名。利用可能なキャスト名は<see cref="GetAvailableCastsAsync"/>で取得できます。</param>
-	/// <returns></returns>
 	/// <see cref="GetCastAsync"/>
-	System.Threading.Tasks.ValueTask SetCastAsync(string castName);
+	ValueTask SetCastAsync(string castName);
 
 	/// <summary>
 	/// 指定したセリフをWAVファイルとして出力します。
@@ -44,4 +45,11 @@ public partial interface ITalkAutoService : IAutoService, IDisposable
 	/// <param name="path">出力先パス。</param>
 	/// <returns>成功した場合はtrue。それ以外の場合はfalse。</returns>
 	Task<bool> OutputWaveToFileAsync(string text, string path);
+
+	/// <summary>
+	/// 指定したセリフの音素単位のデータを取得します。
+	/// </summary>
+	/// <param name="text">セリフ。</param>
+	/// <returns>音素単位のデータのコレクション</returns>
+	Task<ReadOnlyCollection<PhonemeData>> GetPhonemesAsync(string text);
 }
