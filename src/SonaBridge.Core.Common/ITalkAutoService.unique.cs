@@ -9,7 +9,18 @@ public partial interface ITalkAutoService : IAutoService
 	/// 非同期で起動
 	/// </summary>
 	/// <returns></returns>
+	[Obsolete("Use StartAsync with parameters.")]
 	Task StartAsync();
+
+	/// <summary>
+	/// 非同期で起動(REST API使用)
+	/// </summary>
+	/// <param name="userName"></param>
+	/// <param name="password"></param>
+	/// <param name="port"></param>
+	/// <param name="useClassic"></param>
+	/// <returns></returns>
+	Task StartAsync(string userName, string password, int port = 32766, bool useClassic = false);
 
 	/// <summary>
 	/// 現在のキャストのグローバルパラメータ一覧を取得します。

@@ -95,6 +95,11 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		throw new NotSupportedException();
 	}
 
+	public async Task StartAsync(string userName, string password, int port = 32766, bool useClassic = false)
+	{
+		throw new NotSupportedException();
+	}
+
 	/// <summary>
 	/// TalkRestServiceのインスタンスを生成し、音声ライブラリ情報を取得します
 	/// </summary>

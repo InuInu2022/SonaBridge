@@ -14,6 +14,16 @@ public class MacTalkAutoService : ITalkAutoService
 		throw new NotSupportedException();
 	}
 
+	public Task StartAsync(
+		string userName,
+		string password,
+		int port = 32766,
+		bool useClassic = false
+	)
+	{
+		throw new NotSupportedException();
+	}
+
 	public Task<string[]> GetAvailableCastsAsync()
 	{
 		throw new NotSupportedException();
