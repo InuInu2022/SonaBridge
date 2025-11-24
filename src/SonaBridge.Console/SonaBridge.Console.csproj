@@ -1,12 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\SonaBridge\SonaBridge.csproj" />
   </ItemGroup>
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0-windows;net8.0-macos;</TargetFrameworks>
+    <TargetFrameworks>net10.0-windows;net10.0-macos;</TargetFrameworks>
   </PropertyGroup>
-
 </Project>
