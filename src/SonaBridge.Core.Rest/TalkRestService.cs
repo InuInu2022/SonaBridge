@@ -360,11 +360,21 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 				LastCast.Version
 			);
 
-		_ = globalParams.TryGetValue("ALP", out var alpha);
+		_ = globalParams.TryGetValue("Alpha", out var alpha);
+		_ = globalParams.TryGetValue("Speed", out var speed);
+		_ = globalParams.TryGetValue("Pitch", out var pitch);
+		_ = globalParams.TryGetValue("Volume", out var volume);
+		_ = globalParams.TryGetValue("Into.", out var intonation);
+		_ = globalParams.TryGetValue("Hus.", out var hus);
 
 		var param = new GlobalParameters(
 			Alp: alpha,
-			StyleWeights: lastStyles
+			Huskiness: hus,
+			Intonation: intonation,
+			Pitch: pitch,
+			Speed: speed,
+			StyleWeights: lastStyles,
+			Volume: volume
 		);
 
 		UpdateLastCast(LastCast with
