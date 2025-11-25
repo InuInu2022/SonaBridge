@@ -244,15 +244,20 @@ public partial class WinTalkAutoService : ITalkAutoService
 			var presets = await TalkPresetService.LoadAsync()
 				.ConfigureAwait(false);
 
-			return presets is null
-				? []
-				: [.. presets
+			if (presets is null)
+			{
+				return [];
+			}
+			else
+			{
+				return [.. presets!
 					.Where(p => string.Equals(
 						p.Speaker,
 						voiceName,
 						StringComparison.OrdinalIgnoreCase))
 					.Select(p => p.Name),
 				];
+			}
 		}
 		else
 		{
