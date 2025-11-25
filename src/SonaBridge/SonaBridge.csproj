@@ -4,6 +4,9 @@
     <IsPackable>true</IsPackable>
     <PublishRelease>true</PublishRelease>
     <PublishSelfContained>true</PublishSelfContained>
+
+		<!-- ILLink アナライザーの警告を抑制 -->
+		<NoWarn>$(NoWarn);AD0001</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
