@@ -7,9 +7,7 @@ namespace SonaBridge.Core.Win;
 
 public partial class WinTalkAutoService
 {
-	BasicAuthenticationProvider? AuthProvider { get; set; }
-	HttpClientRequestAdapter? Adapter { get; set; }
-	static TalkRestService? _service;
+
 	public static TalkRestService Service
 	{
 		get
@@ -20,13 +18,27 @@ public partial class WinTalkAutoService
 				);
 		}
 	}
+	static BasicAuthenticationProvider? AuthProvider { get; set; }
+	static HttpClientRequestAdapter? Adapter { get; set; }
+	bool IsInitialized { get; set; }
+	static TalkRestService? _service;
+
 
 	[MemberNotNull(nameof(AuthProvider))]
 	[MemberNotNull(nameof(Adapter))]
 	[MemberNotNull(nameof(_service))]
 	[SuppressMessage("Usage", "CS8774", Justification = "<保留中>")]
-	internal async ValueTask InitAsync(string userName, string password, int port = 32766)
+	internal async ValueTask InitAsync(
+		string userName, string password, int port = 32766)
 	{
+		if (!IsInitialized
+		&& AuthProvider is not null
+		&& Adapter is not null
+		&& _service is not null)
+		{
+			return;
+		}
+
 		AuthProvider = new BasicAuthenticationProvider(userName, password);
 		Adapter = new HttpClientRequestAdapter(AuthProvider)
 		{
@@ -40,6 +52,9 @@ public partial class WinTalkAutoService
 		#pragma warning restore CS8774
 
 		if (Service is null)
+		{
 			throw new InvalidOperationException("Failed to initialize TalkRestService.");
+		}
+		IsInitialized = true;
 	}
 }
