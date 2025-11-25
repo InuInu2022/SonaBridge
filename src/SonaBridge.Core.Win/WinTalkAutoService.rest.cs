@@ -39,7 +39,7 @@ public partial class WinTalkAutoService
 			.ConfigureAwait(false);
 		#pragma warning restore CS8774
 
-		if (WinTalkAutoService.Service is null)
+		if (Service is null)
 			throw new InvalidOperationException("Failed to initialize TalkRestService.");
 	}
 }
