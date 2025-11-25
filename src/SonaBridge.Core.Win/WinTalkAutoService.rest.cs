@@ -9,8 +9,8 @@ public partial class WinTalkAutoService
 {
 	BasicAuthenticationProvider? AuthProvider { get; set; }
 	HttpClientRequestAdapter? Adapter { get; set; }
-	TalkRestService? _service;
-	public TalkRestService Service
+	static TalkRestService? _service;
+	public static TalkRestService Service
 	{
 		get
 		{
@@ -39,7 +39,7 @@ public partial class WinTalkAutoService
 			.ConfigureAwait(false);
 		#pragma warning restore CS8774
 
-		if (Service is null)
+		if (WinTalkAutoService.Service is null)
 			throw new InvalidOperationException("Failed to initialize TalkRestService.");
 	}
 }
