@@ -36,20 +36,6 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	internal static Window? TopWindow { get => _win; }
 
-	public WinTalkAutoService()
-	{
-		/*
-		_topWindowCacheRequest = new CacheRequest
-		{
-			TreeScope = TreeScope.Element,
-		};
-		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.Name);
-		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.AutomationId);
-		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.ControlType);
-		_topWindowCacheRequest.Add(_automation.PropertyLibrary.Element.HelpText);
-		*/
-	}
-
 	internal async Task InternalStartUpAsync()
 	{
 		await GetAppWindowAsync().ConfigureAwait(false);

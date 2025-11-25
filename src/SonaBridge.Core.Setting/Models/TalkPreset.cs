@@ -5,12 +5,13 @@ namespace SonaBridge.Core.Setting.Models;
 
 public partial record TalkPreset
 {
+	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[JsonPropertyName("speaker")]
-	public required string Speaker { get; set; }
+	public string? Speaker { get; set; }
 
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[JsonPropertyName("name")]
-	public required string Name { get; set; }
+	public string? Name { get; set; }
 
 	[JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
 	[JsonPropertyName("speed_ratio")]

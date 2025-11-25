@@ -1,11 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net8.0-windows;net10.0-windows;</TargetFrameworks>
+    <TargetFrameworks>net9.0-windows;net10.0-windows;</TargetFrameworks>
     <IsPublishable>false</IsPublishable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SonaBridge.Core.Common\SonaBridge.Core.Common.csproj" />
     <ProjectReference Include="..\SonaBridge.Core.Rest\SonaBridge.Core.Rest.csproj" />
+    <ProjectReference Include="..\SonaBridge.Core.Setting\SonaBridge.Core.Setting.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="FlaUI.UIA3" Version="[4.0.0]" />

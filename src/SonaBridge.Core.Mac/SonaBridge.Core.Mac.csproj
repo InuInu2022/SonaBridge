@@ -1,9 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net10.0-macos</TargetFramework>
+    <TargetFramework>net9.0-macos</TargetFramework>
     <IsPublishable>false</IsPublishable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\SonaBridge.Core.Common\SonaBridge.Core.Common.csproj" />
+    <ProjectReference Include="..\SonaBridge.Core.Rest\SonaBridge.Core.Rest.csproj" />
+    <ProjectReference Include="..\SonaBridge.Core.Setting\SonaBridge.Core.Setting.csproj" />
   </ItemGroup>
 </Project>

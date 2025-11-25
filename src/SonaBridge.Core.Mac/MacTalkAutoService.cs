@@ -10,6 +10,10 @@ public class MacTalkAutoService : ITalkAutoService
 {
 	private bool _disposedValue;
 
+	public MacTalkAutoService()
+	{
+	}
+
 	public Task StartAsync()
 	{
 		throw new NotSupportedException();

@@ -5,12 +5,17 @@ using System.Diagnostics.CodeAnalysis;
 using SonaBridge.Core.Common;
 using SonaBridge.Core.Common.Models;
 using SonaBridge.Core.Rest.Models;
+using SonaBridge.Core.Setting;
 
 namespace SonaBridge.Core.Win;
 
 public partial class WinTalkAutoService : ITalkAutoService
 {
 	public bool UseClassic { get; set; }
+
+	public WinTalkAutoService()
+	{
+	}
 
 	[Obsolete("Use StartAsync with parameters.")]
 	public async Task StartAsync()
@@ -236,24 +241,18 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		if (!UseClassic)
 		{
-			var presetPath = Path.Combine(
-				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-				"Techno-Speech",
-				"VoiSona Talk",
-				"Talker",
-				"preset.json"
-			);
-			string json = await File.ReadAllTextAsync(presetPath)
+			var presets = await TalkPresetService.LoadAsync()
 				.ConfigureAwait(false);
-			if (json is null or "") return [];
 
-			dynamic presets = System.Text.Json.Nodes.JsonNode.Parse(json!);
-			if (presets is null) return [];
-
-			foreach (var preset in presets)
-			{
-
-			}
+			return presets is null
+				? []
+				: [.. presets
+					.Where(p => string.Equals(
+						p.Speaker,
+						voiceName,
+						StringComparison.OrdinalIgnoreCase))
+					.Select(p => p.Name),
+				];
 		}
 		else
 		{
