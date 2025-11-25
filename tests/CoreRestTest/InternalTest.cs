@@ -1,9 +1,11 @@
 ﻿using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Threading.Tasks;
 
 using SonaBridge.Core.Rest.Internal.Models;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
 using SonaBridge.Core.Rest.Internal.TextAnalyses;
+using SonaBridge.Core.Setting;
 
 using Xunit.Abstractions;
 
@@ -169,5 +171,14 @@ public class InternalTest(ServiceFixture fixture, ITestOutputHelper output)
 		Assert.NotNull(posted?.Uuid);
 		if (posted?.Uuid is not { } uuid) return;
 		var result = await _fixture.Client.TextAnalyses[uuid].GetAsync();
+	}
+
+	[Fact]
+	public async Task LoadPreset()
+	{
+		var presets = await TalkPresetService
+			.LoadAsync();
+		Assert.NotNull(presets);
+		Assert.NotEmpty(presets);
 	}
 }
