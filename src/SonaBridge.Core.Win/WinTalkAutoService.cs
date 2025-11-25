@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using SonaBridge.Core.Common;
+using SonaBridge.Core.Common.Models;
 using SonaBridge.Core.Rest.Models;
 
 namespace SonaBridge.Core.Win;
@@ -233,16 +234,47 @@ public partial class WinTalkAutoService : ITalkAutoService
 
 	public async ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
 	{
-		await GetAppWindowAsync().ConfigureAwait(false);
-		await SetCastAsync(voiceName).ConfigureAwait(false);
-		return await GetCurrentPresets().ConfigureAwait(false);
+		if (!UseClassic)
+		{
+			var presetPath = Path.Combine(
+				Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+				"Techno-Speech",
+				"VoiSona Talk",
+				"Talker",
+				"preset.json"
+			);
+			string json = await File.ReadAllTextAsync(presetPath)
+				.ConfigureAwait(false);
+			if (json is null or "") return [];
+
+			dynamic presets = System.Text.Json.Nodes.JsonNode.Parse(json!);
+			if (presets is null) return [];
+
+			foreach (var preset in presets)
+			{
+
+			}
+		}
+		else
+		{
+			await GetAppWindowAsync().ConfigureAwait(false);
+			await SetCastAsync(voiceName).ConfigureAwait(false);
+			return await GetCurrentPresets().ConfigureAwait(false);
+		}
 	}
 
 	public async ValueTask SetPresetsAsync(string voiceName, string presetName)
 	{
-		await GetAppWindowAsync().ConfigureAwait(false);
-		await SetCastAsync(voiceName).ConfigureAwait(false);
-		await SetCurrentPreset(presetName).ConfigureAwait(false);
+		if (!UseClassic)
+		{
+
+		}
+		else
+		{
+			await GetAppWindowAsync().ConfigureAwait(false);
+			await SetCastAsync(voiceName).ConfigureAwait(false);
+			await SetCurrentPreset(presetName).ConfigureAwait(false);
+		}
 	}
 
 	public async Task<ReadOnlyCollection<PhonemeData>> GetPhonemesAsync(string text)

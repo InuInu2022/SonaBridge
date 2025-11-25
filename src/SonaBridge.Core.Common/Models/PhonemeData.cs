@@ -1,4 +1,4 @@
-namespace SonaBridge.Core.Common;
+namespace SonaBridge.Core.Common.Models;
 
 /// <summary>
 /// 音素データの単位オブジェクト。

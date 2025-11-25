@@ -9,6 +9,7 @@ using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 
 using SonaBridge.Core.Common;
+using SonaBridge.Core.Common.Models;
 using SonaBridge.Core.Rest.Internal;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
 using SonaBridge.Core.Rest.Internal.Voices;

@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
 
+using SonaBridge.Core.Common.Models;
+
 namespace SonaBridge.Core.Common;
 
 public partial interface ITalkAutoService : IAutoService, IDisposable

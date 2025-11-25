@@ -2,6 +2,7 @@
 using System.Collections.ObjectModel;
 
 using SonaBridge.Core.Common;
+using SonaBridge.Core.Common.Models;
 
 namespace SonaBridge.Core.Mac;
 
