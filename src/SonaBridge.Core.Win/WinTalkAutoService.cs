@@ -241,23 +241,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		if (!UseClassic)
 		{
-			var presets = await TalkPresetService.LoadAsync()
+			return await Service.GetPresetsAsync(voiceName)
 				.ConfigureAwait(false);
-
-			if (presets is null)
-			{
-				return [];
-			}
-			else
-			{
-				return [.. presets!
-					.Where(p => string.Equals(
-						p.Speaker,
-						voiceName,
-						StringComparison.OrdinalIgnoreCase))
-					.Select(p => p.Name),
-				];
-			}
 		}
 		else
 		{

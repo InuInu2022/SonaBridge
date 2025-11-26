@@ -111,6 +111,25 @@ public partial class TalkRestService
 				: string.Empty;
 	}
 
+	string GetLocaleVoiceDisplayName(
+		VoiceDisplayKey voiceDisplayKey,
+		LanguageKey language
+	)
+	{
+		if (VoiceByDisplay.TryGetValue(voiceDisplayKey, out var vNameKey)
+		&& VoiceByName.TryGetValue(vNameKey, out var voiceData)
+		&& voiceData.DisplayNames.TryGetValue(language, out var localeCastName)
+		)
+		{
+			return localeCastName;
+		}
+		else
+		{
+			LogCastNotFound(voiceDisplayKey.ToString());
+			return string.Empty;
+		}
+	}
+
 	void UpdateLastCast(CastData newCast)
 	{
 		LastCast = newCast;

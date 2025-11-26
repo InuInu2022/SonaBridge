@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
 
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -14,13 +15,15 @@ using SonaBridge.Core.Rest.Internal;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
 using SonaBridge.Core.Rest.Internal.Voices;
 using SonaBridge.Core.Rest.Models;
+using SonaBridge.Core.Setting;
+using SonaBridge.Core.Setting.Models;
 
 using static SonaBridge.Core.Rest.Extension.GlobalParametersExtensions;
 using static SonaBridge.Core.Rest.Extension.SpeakResultExtensions;
 using static SonaBridge.Core.Rest.Extension.WaitExtension;
 
 namespace SonaBridge.Core.Rest;
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
+[SuppressMessage(
 	"Usage",
 	"MA0004:Use Task.ConfigureAwait",
 	Justification = "<保留中>"
@@ -56,6 +59,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 
 
+	[SuppressMessage("Usage", "SMA0030", Justification = "")]
 	public TalkRestService(
 		string user,
 		string password,
@@ -71,7 +75,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		AuthProvider = new(user, password);
 		Adapter = new(AuthProvider)
 		{
-			BaseUrl = $"""http://localhost:{port}/api/talk/v1""",
+			BaseUrl = $"""http://127.0.0.1:{port}/api/talk/v1""",
 		};
 		LastLanguage = new(language);
 
@@ -179,10 +183,30 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		return Task.FromResult(dict);
 	}
 
-	[Obsolete("REST APIではサポートされていません。")]
-	public ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
+	public async ValueTask<IReadOnlyList<string>> GetPresetsAsync(string voiceName)
 	{
-		throw new NotSupportedException("REST APIではサポートされていません。");
+		var presets = await TalkPresetService
+			.LoadAsync()
+			.ConfigureAwait(false);
+
+		var name = GetLocaleVoiceDisplayName(
+			new(voiceName),
+			new("en_US")
+		);
+
+		if (presets is not TalkPreset[] p)
+		{
+			return [];
+		}
+
+		var list = p.Where(p =>
+				p is not null &&
+				string.Equals(p.Speaker, name, StringComparison.OrdinalIgnoreCase)
+			)
+			.Select(p => p.Name)
+			.OfType<string>();
+
+		return [.. list];
 	}
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "MA0002:IEqualityComparer<string> or IComparer<string> is missing", Justification = "<保留中>")]
