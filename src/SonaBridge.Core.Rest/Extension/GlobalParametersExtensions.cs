@@ -36,27 +36,27 @@ public static class GlobalParametersExtensions
 
 			if (gParams.Alp.HasValue)
 			{
-				dict["ALP"] = gParams.Alp.Value;
+				dict["Alpha"] = gParams.Alp.Value;
 			}
 			if (gParams.Huskiness.HasValue)
 			{
-				dict["HUS"] = gParams.Huskiness.Value;
+				dict["Hus."] = gParams.Huskiness.Value;
 			}
 			if (gParams.Intonation.HasValue)
 			{
-				dict["INTO"] = gParams.Intonation.Value;
+				dict["Into."] = gParams.Intonation.Value;
 			}
 			if (gParams.Pitch.HasValue)
 			{
-				dict["PIT"] = gParams.Pitch.Value;
+				dict["Pitch"] = gParams.Pitch.Value;
 			}
 			if (gParams.Speed.HasValue)
 			{
-				dict["SPD"] = gParams.Speed.Value;
+				dict["Speed"] = gParams.Speed.Value;
 			}
 			if (gParams.Volume.HasValue)
 			{
-				dict["VOL"] = gParams.Volume.Value;
+				dict["Volume"] = gParams.Volume.Value;
 			}
 
 			return new ReadOnlyDictionary<string, double>(dict);
