@@ -205,8 +205,15 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		if (!UseClassic)
 		{
-			return await Service.GetStylesAsync(voiceName)
-				.ConfigureAwait(false);
+			try
+			{
+				return await Service.GetStylesAsync(voiceName)
+					.ConfigureAwait(false);
+			}
+			catch (System.Exception)
+			{
+				throw;
+			}
 		}
 		else
 		{
