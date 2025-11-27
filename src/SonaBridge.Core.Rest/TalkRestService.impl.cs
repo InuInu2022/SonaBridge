@@ -1,6 +1,7 @@
 using System.Linq;
 using SonaBridge.Core.Rest.Extension;
 using SonaBridge.Core.Rest.Internal.SpeechSyntheses;
+using SonaBridge.Core.Setting.Models;
 
 namespace SonaBridge.Core.Rest;
 
@@ -165,6 +166,37 @@ public partial class TalkRestService
 		return await _client
 			.Voices[vName.ToString()][vVersion.ToString()]
 			.GetAsync();
+	}
+
+	static Dictionary<string, double> CreatePresetDictionary(TalkPreset preset)
+	{
+		var dict = new Dictionary<string, double>(StringComparer.Ordinal);
+		if (preset.AlphaShift.HasValue)
+		{
+			dict["Alpha"] = (double)preset.AlphaShift;
+		}
+		if (preset.LogF0Scale.HasValue)
+		{
+			dict["Into."] = (double)preset.LogF0Scale;
+		}
+		if (preset.HuskyShift.HasValue)
+		{
+			dict["Hus."] = (double)preset.HuskyShift;
+		}
+		if (preset.LogF0Shift.HasValue)
+		{
+			dict["Pitch"] = (double)preset.LogF0Shift;
+		}
+		if (preset.SpeedRatio.HasValue)
+		{
+			dict["Speed"] = (double)preset.SpeedRatio;
+		}
+		if (preset.C0Shift.HasValue)
+		{
+			dict["Volume"] = (double)preset.C0Shift;
+		}
+
+		return dict;
 	}
 
 	/// <summary>

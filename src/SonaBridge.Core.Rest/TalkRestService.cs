@@ -53,6 +53,7 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 	/// ボイスライブラリ毎にデータを持つ
 	/// </summary>
 	static ConcurrentDictionary<VoiceNameKey, CastData> LastCasts { get; set; } = [];
+	TalkPreset[] LastPresets { get; set; } = [];
 
 	readonly ILogger<TalkRestService> _logger;
 	readonly RawTalkApi _client;
@@ -198,6 +199,8 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		{
 			return [];
 		}
+
+		LastPresets = p;
 
 		var list = p.Where(p =>
 				p is not null &&
@@ -409,11 +412,42 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 
 	}
 
-	[Obsolete("REST APIではサポートされていません。")]
-	public ValueTask SetPresetsAsync(string voiceName, string presetName)
+	public async ValueTask SetPresetsAsync(string voiceName, string presetName)
 	{
-		throw new NotSupportedException("REST APIではサポートされていません。");
+		var name = GetLocaleVoiceDisplayName(
+			new(voiceName),
+			new("en_US")
+		);
+		var preset = LastPresets
+			.FirstOrDefault(p =>
+				string.Equals(p.Speaker, name, StringComparison.Ordinal)
+				&& string.Equals(p.Name, presetName, StringComparison.Ordinal));
+
+		if (preset is null)
+		{
+			LogWarning($"Preset '{presetName}' for cast '{voiceName}' not found.");
+			return;
+		}
+
+		await SetCastAsync(voiceName);
+		var dict = CreatePresetDictionary(preset);
+		await SetGlobalParamsAsync(dict);
+
+		if (preset.Style is null) return;
+		await SetStylesAsync(
+			voiceName,
+			preset.Style
+				.Where(p => p.Weight is not null)
+				.ToDictionary(
+					p => p.Name,
+					p => (double) p.Weight!,
+					StringComparer.Ordinal
+				)
+		);
+
 	}
+
+
 
 	public async ValueTask SetStylesAsync(string voiceName, IDictionary<string, double> styles)
 	{

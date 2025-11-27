@@ -256,7 +256,8 @@ public partial class WinTalkAutoService : ITalkAutoService
 	{
 		if (!UseClassic)
 		{
-
+			await Service.SetPresetsAsync(voiceName, presetName)
+				.ConfigureAwait(false);
 		}
 		else
 		{
