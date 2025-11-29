@@ -73,8 +73,22 @@ public partial class TalkRestService : ITalkAutoService, IRestAutoService
 		ArgumentException.ThrowIfNullOrEmpty(password);
 		ArgumentException.ThrowIfNullOrEmpty(language);
 
+		// HttpClient の接続プール設定を最適化
+		var handler = new SocketsHttpHandler
+		{
+			PooledConnectionLifetime = TimeSpan.FromMinutes(2),
+			PooledConnectionIdleTimeout = TimeSpan.FromSeconds(90),
+			MaxConnectionsPerServer = 10,
+			EnableMultipleHttp2Connections = false,
+		};
+
+		var httpClient = new HttpClient(handler, disposeHandler: true)
+		{
+			Timeout = TimeSpan.FromMinutes(5),
+		};
+
 		AuthProvider = new(user, password);
-		Adapter = new(AuthProvider)
+		Adapter = new(AuthProvider, httpClient: httpClient)
 		{
 			BaseUrl = $"""http://127.0.0.1:{port}/api/talk/v1""",
 		};

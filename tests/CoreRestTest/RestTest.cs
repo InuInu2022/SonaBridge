@@ -115,6 +115,43 @@ public class RestTest(RestServiceFixture fixture, ITestOutputHelper output)
 			}
 		);
 	}
+
+	[Theory]
+	[InlineData("タカハシ")]
+	public async Task GetPresets(string castName)
+	{
+		Assert.NotNull(fixture.Service);
+		var presets = await fixture.Service
+			.GetPresetsAsync(castName);
+		Assert.NotEmpty(presets);
+		output.WriteLine(
+			$"Presets: {string.Join(", ", presets)}"
+		);
+
+		foreach (var preset in presets)
+		{
+			output.WriteLine($"Preset: {preset}");
+			await fixture.Service.SetPresetsAsync(castName, preset);
+
+			var result = await fixture.Service.OutputWaveToFileAsync(
+				$"プリセット名 {preset} を適用しました。これはプリセットのテストです",
+				Path.Combine(Path.GetTempPath(), $"preset_{preset}.wav")
+			);
+			Assert.True(result);
+			//await fixture.Service.SpeakAsync($"プリセット名 {preset} を適用しました。");
+			//await fixture.Service.SpeakAsync("これはプリセットのテストです");
+
+			var globalParams = await fixture.Service.GetGlobalParamsAsync();
+			Assert.NotEmpty(globalParams);
+			output.WriteLine($"globalParams: {globalParams.ToArray()}");
+
+			var styles = await fixture.Service.GetStylesAsync(castName);
+			Assert.NotEmpty(styles);
+			output.WriteLine($"Preset: {styles.ToArray()}");
+		}
+
+	}
+
 }
 
 [SuppressMessage("Design", "MA0048:File name must match type name", Justification = "<保留中>")]
